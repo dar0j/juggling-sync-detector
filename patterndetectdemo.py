@@ -11,7 +11,8 @@ handleTensorflowSession(memoryLimit=0.2)
 
 gridModel = GridModel("../grid_models/grid_model_submovavg_64x64.h5")
 patternModel = load_model("../pattern_models/3b_pattern_model.h5")
-cap = cv2.VideoCapture(0)
+cam = 2 #2: droidcam conectado a usb 3.0 IP WebCam App:"https://192.168.0.3:8080/video"
+cap = cv2.VideoCapture(cam)
 history = []
 framerateChecker = FramerateChecker(expected_fps=30)
 names = ["441", "box", "cascade", "42, left hand", "shower, left hand", "mill's mess", "one up two up", "42, right hand", "reverse cascade", "shower, right hand", "takeouts", "tennis"]

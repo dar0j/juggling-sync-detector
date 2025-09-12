@@ -9,7 +9,7 @@ def getDistance(x1,y1,x2,y2):
 def handleTensorflowSession(memoryLimit):
     config = tf.ConfigProto()
     config.gpu_options.per_process_gpu_memory_fraction = memoryLimit
-    config.gpu_options.visible_device_list = "0"
+    config.gpu_options.visible_device_list = ""#0"
     config.intra_op_parallelism_threads = 1
     config.inter_op_parallelism_threads = 1
     set_session(tf.Session(config=config))
