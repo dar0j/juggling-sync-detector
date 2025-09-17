@@ -11,8 +11,15 @@ handleTensorflowSession(memoryLimit=0.2)
 
 gridModel = GridModel("../grid_models/grid_model_submovavg_64x64.h5")
 patternModel = load_model("../pattern_models/3b_pattern_model.h5")
-cam = 2 #2: droidcam conectado a usb 3.0 IP WebCam App:"https://192.168.0.3:8080/video"
+cam = 3 # 1:new integrated webcam... 3: external webcam. 2: droidcam conectado a usb 3.0. IP WebCam App: "https://192.168.0.3:8080/video"
 cap = cv2.VideoCapture(cam)
+width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+fps = cap.get(cv2.CAP_PROP_FPS) # drivers/cámaras pueden no reportar el valor correcto
+backend = cap.getBackendName() if hasattr(cap, "getBackendName") else "Unknown"
+print(f"Camera resolution: {int(width)}x{int(height)}")
+print(f"Camera FPS (reported): {fps}")
+print(f"OpenCV backend: {backend}")
 history = []
 framerateChecker = FramerateChecker(expected_fps=30)
 names = ["441", "box", "cascade", "42, left hand", "shower, left hand", "mill's mess", "one up two up", "42, right hand", "reverse cascade", "shower, right hand", "takeouts", "tennis"]
