@@ -20,7 +20,7 @@ FRAMES = 30*100
 FILENAME = sys.argv[1]
 BALLS = int(sys.argv[2])
 recording = np.zeros((FRAMES, 4+BALLS*2), dtype=np.uint8)
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 framerateChecker = FramerateChecker(expected_fps=30)
 gridModel = GridModel("../grid_models/grid_model_submovavg_64x64.h5", nBalls=BALLS, flip=False, postprocess=True)
 
