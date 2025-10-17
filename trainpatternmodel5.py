@@ -5,8 +5,8 @@ import scikitplot as skplt
 import numpy as np
 import cv2
 
-pdl = PatternDataLoader("3balls", length=30)
-saveModelFilename="3b_30_128_model.h5"
+pdl = PatternDataLoader("5balls", length=30)
+saveModelFilename="5b_30_128_model.h5"
 
 
 
@@ -29,7 +29,7 @@ model.add(Dense(units=60, kernel_regularizer=regularizers.l2(0.0001)))
 model.add(LeakyReLU())
 
 
-model.add(Dense(units=9, activation='softmax'))
+model.add(Dense(units=8, activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=[metrics.categorical_accuracy])
 checkpoint = ModelCheckpoint(saveModelFilename, verbose=1, save_best_only=True, period=1)

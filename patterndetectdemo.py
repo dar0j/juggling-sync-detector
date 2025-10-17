@@ -11,7 +11,7 @@ handleTensorflowSession(memoryLimit=0.2)
 
 gridModel = GridModel("../grid_models/grid_model_submovavg_64x64.h5")
 patternModel = load_model("../pattern_models/3b_pattern_model.h5")
-cam = 0 # 1:new integrated webcam... 3: external webcam. 2: droidcam conectado a usb 3.0. IP WebCam App: "https://192.168.0.3:8080/video"
+cam = 1 # 1:new integrated webcam... 3: external webcam. 2: droidcam conectado a usb 3.0. IP WebCam App: "https://192.168.0.3:8080/video"
 cap = cv2.VideoCapture(cam)
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
