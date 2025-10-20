@@ -109,6 +109,44 @@ class PatternDataLoader:
                 np.random.shuffle(reshaped_set[i,j,2:])
         clean_set = np.reshape(reshaped_set, (len(clean_set), self.length, -1))
         return clean_set
+    
+    def get_cross_validation_data(self, start=0, stop=None, shuffle_balls=False):
+        """
+        Returns (X, y) with flip augmentation, ready for cross-validation.
+        """
+        X, y = [], []
+        with open(self.patternsFolder + self.filename) as patternlist:
+            count = 0
+            for filename in patternlist:
+                filename = filename.rstrip('\n')
+                annotations = pd.read_csv(self.patternsFolder + filename, header=None).values
+                annotations = annotations[start:stop] if stop is not None else annotations[start:]
+                patterns = self._annotationsToX(annotations)
+                if patterns.size:
+                    X.extend(patterns)
+                    y.extend([count] * patterns.shape[0])
+
+                if filename not in self.excluded_tricks:
+                    side_match = re.search(r"_(R|L)?", filename)
+                    side = side_match.group(1) if side_match else None
+                    if side:
+                        counterpart = self._convertSide(filename, side)
+                        try:
+                            annotations_new = pd.read_csv(self.patternsFolder + counterpart, header=None).values
+                            annotations_new = self._flipAnnotations(annotations_new)
+                            annotations_new = annotations_new[start:stop] if stop is not None else annotations_new[start:]
+                            patterns_new = self._annotationsToX(annotations_new)
+                            if patterns_new.size:
+                                X.extend(patterns_new)
+                                y.extend([count] * patterns_new.shape[0])
+                        except FileNotFoundError:
+                            pass
+                count += 1
+
+            X = np.array(X, dtype=np.float32)
+            if shuffle_balls and X.size:
+                X = self._shuffleBalls(X)
+            return X, np.array(y, dtype=np.int32)
 
     def getNames(self):
         with open(self.patternsFolder + self.filename) as patternlist:
