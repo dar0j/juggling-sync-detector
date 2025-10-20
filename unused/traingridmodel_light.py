@@ -1,5 +1,5 @@
 import numpy as np
-from jugglingdataloader import JugglingDataLoader
+from unused.jugglingdataloader import JugglingDataLoader
 from utils import handleTensorflowSession
 from losses import grid_loss_with_hands
 from keras import optimizers

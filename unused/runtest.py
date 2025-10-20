@@ -2,9 +2,9 @@ import numpy as np
 import cv2
 from gridmodel import GridModel
 from utils import handleTensorflowSession
-from testutils import ScoreKeeper
+from unused.testutils import ScoreKeeper
 from drawingutils import drawBallsAndHands
-from jugglingdataloader import JugglingDataLoader
+from unused.jugglingdataloader import JugglingDataLoader
 
 
 handleTensorflowSession(memoryLimit=0.2)
