@@ -5,20 +5,20 @@ import csv
 import numpy as np
 import sys
 
-sys.path.append("../../../old rasmus/juggling-vision-py")
+sys.path.append("../") #sys.path.append("../../../old rasmus/juggling-vision-py")
 from gridmodel import GridModel
 
 for nBalls in [3, 4, 5, 6]:
-    input_dir = f"../../Datasets/{nBalls}b"
-    output_dir = f"60 fps/{nBalls}b frames 60"
-    patternscsvfolder = f"{nBalls}b csv 60 128"
-    os.makedirs(output_dir, exist_ok=True)
+    input_dir = f"../../new nov/{nBalls}b" #Datasets/{nBalls}b
+    #output_dir = f"60 fps/{nBalls}b frames 60" #30/60 fps/{nBalls}b frames 30/60
+    patternscsvfolder = f"../../new nov/{nBalls}b csv 60 128" # 30/60 64/128
+    #os.makedirs(output_dir, exist_ok=True)
     os.makedirs(patternscsvfolder, exist_ok=True)
 
     video_files = glob.glob(os.path.join(input_dir, "*.mp4")) # gif o mp4
 
     # Ajusta el path del modelo si tienes uno distinto por cantidad de bolas
-    grid_model = GridModel(f"../../../old rasmus/grid_models/grid_model_submovavg_128x128.h5", nBalls=nBalls)
+    grid_model = GridModel(f"../../grid_models/grid_model_submovavg_128x128.h5", nBalls=nBalls) #64 or 128
 
     for video_path in video_files:
         vid_name = os.path.splitext(os.path.basename(video_path))[0]
@@ -30,8 +30,8 @@ for nBalls in [3, 4, 5, 6]:
         while success:
             #if frame_idx % 2 == 0: # skippear/alternar frames para que tome de un video de 60 fps muestras en 30 fps
             resized = cv2.resize(image, (256, 256), interpolation=cv2.INTER_AREA)
-            out_path = os.path.join(output_dir, f"{vid_name}_frame{count:05d}.png")
-            cv2.imwrite(out_path, resized)
+            #out_path = os.path.join(output_dir, f"{vid_name}_frame{count:05d}.png")
+            #cv2.imwrite(out_path, resized)
             # Predice posiciones
             balls_and_hands = grid_model.predict(resized)
             # Guarda anotaciones en el formato esperado
@@ -45,7 +45,7 @@ for nBalls in [3, 4, 5, 6]:
             #frame_idx += 1
         vidcap.release()
         # Guarda las anotaciones en CSV
-        with open(os.path.join(patternscsvfolder, f"{vid_name}_annotations.csv"), "w", newline="") as f:
+        with open(os.path.join(patternscsvfolder, f"{vid_name}.csv"), "w", newline="") as f: #quitado _annotations
             writer = csv.writer(f)
             for row in annotations:
                 writer.writerow(row)
