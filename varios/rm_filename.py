@@ -4,12 +4,12 @@ string_a_remover = "_annotations"
 #L=['(0,6)', '(2,4)', '(2x,4x)', '(4,4)(0,4)', '(0,8)', '(2x,6x)', '(4x,6x)']
 #R=['(4,2)', '(4,4)(4,0)', '(4x,2x)', '(6,0)', '(6x,2x)', '(8,0)', '(6x,4x)', '(8x,2x)']
 
-for fps in [30,60]:
-    for model in [64,128]:
+for fps in [60]:#[30,60]:
+    for model in [128]:#[64,128]:
         for ball in range(3,7):
             #directorio = f"CSVs/{fps}fps{model}/{ball}b gifs csv"
             #if model==128: #al descomentar indentar la sgte linea
-            directorio = f"CSVs/{fps}fps{model}/{ball}b csv {fps} 128" # gifs csv 128"
+            directorio = f"CSVs/{fps}fps{model}/{ball}b gifs csv {fps} 128" # csv {fps} 128"
             for nombre_archivo in os.listdir(directorio):
                 #if nombre_archivo.endswith(".csv"): #comentado porque todos son csv
                 ruta_completa = os.path.join(directorio, nombre_archivo)
