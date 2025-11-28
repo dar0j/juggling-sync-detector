@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+from tensorflow.keras.callbacks import EarlyStopping
 
 # Parámetros
 max_balls = 6
@@ -58,14 +59,14 @@ def load_dataset(root):
             continue
 
         # Min-max (sobre frames reales) evitando división por 0
-        minv = real_frames.min(axis=0, keepdims=True)
-        maxv = real_frames.max(axis=0, keepdims=True)
-        rangev = maxv - minv
-        rangev[rangev == 0] = 1.0
-        scaled = (real_frames - minv) / rangev  # [0,1]
+        # minv = real_frames.min(axis=0, keepdims=True)
+        # maxv = real_frames.max(axis=0, keepdims=True)
+        # rangev = maxv - minv
+        # rangev[rangev == 0] = 1.0
+        # scaled = (real_frames - minv) / rangev  # [0,1]
 
-        # Insertar normalizado en sus columnas reales
-        seq[real_mask, :real_cols] = scaled
+        # Insertar normalizado en sus columnas reales (comentado porque no es algo que Sergio dijo)
+        seq[real_mask, :real_cols] = real_frames # scaled
         # Columnas vacías permanecen en mask_value (-1)
         X_list.append(seq)
         y_list.append(y)
@@ -127,11 +128,13 @@ model.summary()
 # Entrenamiento
 EPOCHS = 50
 BATCH = 32
+early = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, verbose=1)
 history = model.fit(
     [train_X, train_bc], train_y,
     validation_data=([val_X, val_bc], val_y),
     epochs=EPOCHS,
-    batch_size=BATCH
+    batch_size=BATCH,
+    callbacks=[early]
 )
 
 # Evaluación test

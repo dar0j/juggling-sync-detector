@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 def _moving_avg(a, w=5):
     if w <= 1: return a
@@ -11,9 +12,16 @@ def _moving_avg(a, w=5):
 def load_positions(csv_path):
     # Columnas esperadas:
     # x_righthand, y_righthand, x_lefthand, y_lefthand, x_ball1, y_ball1, x_ball2, y_ball2, ...
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, header=None)
+    df.columns = [
+        "x_righthand","y_righthand",
+        "x_lefthand","y_lefthand",
+        "x_ball1","y_ball1",
+        "x_ball2","y_ball2",
+        "x_ball3","y_ball3"
+    ]
     cols = df.columns.tolist()
-    assert cols[0:4] == ['x_righthand','y_righthand','x_lefthand','y_lefthand'], "Cabecera CSV inesperada"
+    #assert cols[0:4] == ['x_righthand','y_righthand','x_lefthand','y_lefthand'], "Cabecera CSV inesperada"
     # manos
     rh = df[['x_righthand','y_righthand']].to_numpy()
     lh = df[['x_lefthand','y_lefthand']].to_numpy()
@@ -143,13 +151,78 @@ def canonical_rotation(seq):
     rots = [seq[k:] + seq[:k] for k in range(len(seq))]
     return min(rots)
 
-def pipeline(csv_path, fps=60, smooth_window=5, d_thresh=50.0, v_thresh=2.0, frame_window=4):
+class BallKF:
+    def __init__(self, x, y):
+        self.state = np.array([x, y, 0., 0.], dtype=float)  # x,y,vx,vy
+        self.P = np.eye(4) * 50.
+    def predict(self, dt):
+        F = np.array([[1,0,dt,0],
+                      [0,1,0,dt],
+                      [0,0,1,0],
+                      [0,0,0,1]], dtype=float)
+        self.state = F @ self.state
+        self.P = F @ self.P @ F.T + np.eye(4) * 0.5
+        return self.state[:2]
+    def update(self, z):
+        H = np.array([[1,0,0,0],
+                      [0,1,0,0]], dtype=float)
+        y = z - H @ self.state
+        S = H @ self.P @ H.T + np.eye(2) * 2.
+        K = self.P @ H.T @ np.linalg.inv(S)
+        self.state = self.state + K @ y
+        self.P = (np.eye(4) - K @ H) @ self.P
+
+def reidentify_balls_kf(balls, fps=60, max_cost=150):
+    """
+    balls: lista de arrays (frames,2) en orden inicial (puede variar).
+    Devuelve lista reordenada estable usando predicción Kalman + Hungarian.
+    """
+    if not balls:
+        return balls
+    nb = len(balls)
+    nframes = balls[0].shape[0]
+    # stack detections
+    detections = np.stack(balls, axis=1)  # (frames, nb, 2)
+    # inicializar filtros
+    kfs = [BallKF(detections[0,i,0], detections[0,i,1]) for i in range(nb)]
+    assigned = np.zeros_like(detections)
+    assigned[0] = detections[0]
+    dt = 1.0 / fps
+    prev_pred = [kf.state[:2].copy() for kf in kfs]
+
+    for t in range(1, nframes):
+        cur = detections[t]  # (nb,2)
+        # predicciones
+        preds = np.array([kf.predict(dt) for kf in kfs])  # (nb,2)
+        # matriz de costos
+        cost = np.linalg.norm(preds[:, None, :] - cur[None, :, :], axis=2)
+        # gating
+        gated = cost.copy()
+        gated[gated > max_cost] = max_cost * 5
+        rows, cols = linear_sum_assignment(gated)
+        # reordenar según asignación (row = filtro, col = detección)
+        frame_assigned = np.zeros_like(cur)
+        for r, c in zip(rows, cols):
+            frame_assigned[r] = cur[c]
+            kfs[r].update(cur[c])
+        # fallback si alguna fila quedó en cero (detección inválida)
+        for r in range(nb):
+            if np.all(frame_assigned[r] == 0):
+                frame_assigned[r] = preds[r]
+        assigned[t] = frame_assigned
+
+    # separar por bola
+    out = [assigned[:, i, :] for i in range(nb)]
+    return out
+
+def pipeline(csv_path, fps=60, smooth_window=5, d_thresh=50.0, v_thresh=2.0, frame_window=4, use_kf=False, max_cost=150):
     rh, lh, balls = load_positions(csv_path)
+    if use_kf:
+        balls = reidentify_balls_kf(balls, fps=fps, max_cost=max_cost)
     rh, lh, balls = smooth_series(rh, lh, balls, window=smooth_window)
     catches = detect_catches(rh, lh, balls, fps=fps, d_thresh=d_thresh, v_thresh=v_thresh)
     beats = group_into_beats(catches, frame_window=frame_window)
-    pairs = compute_sync_siteswap_from_beats(beats)  # lista de ('Ax'|'2'|'-'|'0', 'Bx'|...)
-    # string completo y periodo mínimo
+    pairs = compute_sync_siteswap_from_beats(beats)
     seq_str = ''.join([f"({a},{b})" for a,b in pairs])
     period_list = minimal_period_pairs(pairs)
     period_canon = canonical_rotation(period_list)
@@ -170,7 +243,9 @@ if __name__ == "__main__":
     ap.add_argument('--d', type=float, default=50.0)
     ap.add_argument('--v', type=float, default=2.0)
     ap.add_argument('--win', type=int, default=4)
+    ap.add_argument('--kf', action='store_true', help='Activar reidentificación Kalman+Hungarian')
+    ap.add_argument('--maxcost', type=float, default=150.0, help='Umbral distancia para gating')
     args = ap.parse_args()
-    res = pipeline(args.csv, fps=args.fps, smooth_window=args.smooth, d_thresh=args.d, v_thresh=args.v, frame_window=args.win)
+    res = pipeline(args.csv, fps=args.fps, smooth_window=args.smooth, d_thresh=args.d, v_thresh=args.v, frame_window=args.win, use_kf=args.kf, max_cost=args.maxcost)
     print("FULL:", res['siteswap_full'])
     print("PERIOD:", res['siteswap_period'])
