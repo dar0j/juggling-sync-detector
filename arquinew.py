@@ -1,10 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
+from tensorflow.keras.optimizers import Adam
 import os, glob
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit, StratifiedKFold
-from sklearn.metrics import confusion_matrix, classification_report, f1_score
+from sklearn.metrics import confusion_matrix, classification_report, f1_score, balanced_accuracy_score
 import matplotlib.pyplot as plt
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 import json
@@ -17,7 +18,10 @@ mask_value = -1.0  # mejor que 0 si normalizas a [0,1]
 data_root = "../CSVs/60fps128"  # carpeta raíz
 
 # Loader
-def load_dataset(root):
+def load_dataset(root, shuffle_balls=False, random_seed=42):
+    if shuffle_balls:
+        np.random.seed(random_seed) 
+    
     X_list, y_list = [], []
     label_map = {}
     next_label = 0
@@ -47,11 +51,19 @@ def load_dataset(root):
         y = label_map[trickname]
 
         data = pd.read_csv(path, header=None).values
-        # Construir secuencia con padding de columnas hasta 16
         seq = np.full((data.shape[0], max_features), mask_value, dtype=np.float32)
-        # data tiene 4 + 2*nballs columnas reales
         real_cols = 4 + 2*nballs
         seq[:, :real_cols] = data[:, :real_cols]
+        
+        # NUEVO: shuffle columnas de pelotas (antes de normalizar)
+        if shuffle_balls and nballs > 1:
+            for t in range(seq.shape[0]):  # cada frame
+                # Extraer pelotas reales (columnas 4 a 4+2*nballs)
+                balls_idx = slice(hand_feats, hand_feats+2*nballs)
+                balls = seq[t, balls_idx].reshape(nballs, 2)
+                np.random.shuffle(balls)  # mezclar orden
+                seq[t, balls_idx] = balls.flatten()
+        
         seq[:, -1] = nballs / max_balls  # última columna = ball_count normalizado
 
         # Normalización por secuencia (solo frames reales)
@@ -84,18 +96,20 @@ def load_dataset(root):
     return X_padded, y_arr, num_classes, label_map
 
 if __name__ == "__main__":
-    X, y, num_classes, label_map = load_dataset(data_root)
+    # Llamar con shuffle
+    X, y, num_classes, label_map = load_dataset(data_root, shuffle_balls=True)
     print("Dataset:", X.shape, y.shape, "num_classes:", num_classes)
     
     # Parámetros CV
-    K_FOLDS = 5
-    EPOCHS = 50
-    BATCH = 32
+    K_FOLDS = 6
+    EPOCHS = 70
+    BATCH = 64
     
     os.makedirs("checkpoints", exist_ok=True)
     skf = StratifiedKFold(n_splits=K_FOLDS, shuffle=True, random_state=42)
     fold_results = []
     fold_f1_macro = []
+    fold_balanced_acc = []  # añadir lista para balanced accuracy
     
     for fold, (train_val_idx, test_idx) in enumerate(skf.split(X, y)):
         print(f"\n=== FOLD {fold+1}/{K_FOLDS} ===")
@@ -104,7 +118,7 @@ if __name__ == "__main__":
         X_train_val, y_train_val = X[train_val_idx], y[train_val_idx]
         test_X, test_y = X[test_idx], y[test_idx]
         
-        sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.15, random_state=42+fold)
+        sss_val = StratifiedShuffleSplit(n_splits=1, test_size=54, random_state=42+fold)
         train_idx, val_idx = next(sss_val.split(X_train_val, y_train_val))
         train_X, train_y = X_train_val[train_idx], y_train_val[train_idx]
         val_X, val_y = X_train_val[val_idx], y_train_val[val_idx]
@@ -113,17 +127,17 @@ if __name__ == "__main__":
         def build_model():
             inp = layers.Input(shape=(None, max_features), name="coords")  # 17 features
             x = layers.Masking(mask_value=mask_value)(inp)
-            x = layers.Conv1D(128, 3, activation='relu')(x)
-            x = layers.Conv1D(256, 5, padding='same', activation='relu', dilation_rate=3)(x)
-            x = layers.Conv1D(256, 3, padding='same', activation='relu')(x)
+            x = layers.Conv1D(32, 7, activation='relu')(x)
+            x = layers.Conv1D(64, 5, padding='same', activation='relu', dilation_rate=2)(x)
+            x = layers.Conv1D(64, 3, padding='same', activation='relu')(x)
             x = layers.GlobalAveragePooling1D()(x)
             x = layers.Dense(256, activation='relu')(x)
-            x = layers.Dropout(0.4)(x)
+            x = layers.Dropout(0.5)(x)
             x = layers.Dense(64, activation='relu')(x)
             out = layers.Dense(num_classes, activation='softmax')(x)
             
             model = models.Model(inputs=inp, outputs=out)
-            model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+            model.compile(optimizer=Adam(learning_rate=0.0005), loss='sparse_categorical_crossentropy', metrics=['accuracy']) # 'adam' o Adam(learning_rate=0.0005)
             return model
         
         model = build_model()
@@ -132,7 +146,7 @@ if __name__ == "__main__":
         early = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, verbose=1)
         checkpoint = ModelCheckpoint(
             f"checkpoints/fold_{fold+1}_best.h5",
-            monitor='val_accuracy',
+            monitor='val_acc',
             save_best_only=True,
             verbose=0
         )
@@ -152,10 +166,13 @@ if __name__ == "__main__":
         test_pred = np.argmax(test_pred_probs, axis=1)
         acc = (test_pred == test_y).mean()
         f1_macro = f1_score(test_y, test_pred, average='macro')
+        balanced_acc = balanced_accuracy_score(test_y, test_pred)
         print(f"Fold {fold+1} Test Accuracy: {acc:.3f}")
         print(f"Fold {fold+1} F1-score (macro): {f1_macro:.3f}")
+        print(f"Fold {fold+1} Balanced Accuracy: {balanced_acc:.3f}")
         fold_results.append(acc)
         fold_f1_macro.append(f1_macro)
+        fold_balanced_acc.append(balanced_acc)
         
         # Classification report
         idx_to_label = {v:k for k,v in label_map.items()}
@@ -181,6 +198,8 @@ if __name__ == "__main__":
     print(f"Mean accuracy: {np.mean(fold_results):.3f} ± {np.std(fold_results):.3f}")
     print(f"Fold F1-macro: {fold_f1_macro}")
     print(f"Mean F1-macro: {np.mean(fold_f1_macro):.3f} ± {np.std(fold_f1_macro):.3f}")
+    print(f"Fold Balanced Accuracy: {fold_balanced_acc}")
+    print(f"Mean Balanced Accuracy: {np.mean(fold_balanced_acc):.3f} ± {np.std(fold_balanced_acc):.3f}")
 
     # Guardar resultados
     with open("cv_results.json", "w") as f:
@@ -190,7 +209,10 @@ if __name__ == "__main__":
             "mean_accuracy": float(np.mean(fold_results)),
             "std_accuracy": float(np.std(fold_results)),
             "mean_f1_macro": float(np.mean(fold_f1_macro)),
-            "std_f1_macro": float(np.std(fold_f1_macro))
+            "std_f1_macro": float(np.std(fold_f1_macro)),
+            "fold_balanced_accuracy": fold_balanced_acc,
+            "mean_balanced_accuracy": float(np.mean(fold_balanced_acc)),
+            "std_balanced_accuracy": float(np.std(fold_balanced_acc))
         }, f, indent=2)
 
     # Guardar label_map
