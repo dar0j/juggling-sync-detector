@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers, models
-from tensorflow.keras.optimizers import Adam
+# from tensorflow.keras.optimizers import Adam
 import os, glob
 import numpy as np
 import pandas as pd
@@ -127,9 +127,9 @@ if __name__ == "__main__":
         def build_model():
             inp = layers.Input(shape=(None, max_features), name="coords")  # 17 features
             x = layers.Masking(mask_value=mask_value)(inp)
-            x = layers.Conv1D(32, 7, activation='relu')(x)
-            x = layers.Conv1D(64, 5, padding='same', activation='relu', dilation_rate=2)(x)
-            x = layers.Conv1D(64, 3, padding='same', activation='relu')(x)
+            x = layers.Conv1D(64, 7, activation='relu')(x)
+            x = layers.Conv1D(128, 5, padding='same', activation='relu', dilation_rate=4)(x)
+            x = layers.Conv1D(128, 3, padding='same', activation='relu')(x)
             x = layers.GlobalAveragePooling1D()(x)
             x = layers.Dense(256, activation='relu')(x)
             x = layers.Dropout(0.5)(x)
@@ -137,7 +137,7 @@ if __name__ == "__main__":
             out = layers.Dense(num_classes, activation='softmax')(x)
             
             model = models.Model(inputs=inp, outputs=out)
-            model.compile(optimizer=Adam(learning_rate=0.0005), loss='sparse_categorical_crossentropy', metrics=['accuracy']) # 'adam' o Adam(learning_rate=0.0005)
+            model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy']) # 'adam' o Adam(learning_rate=0.0005)
             return model
         
         model = build_model()
