@@ -1,0 +1,259 @@
+(code) [dar0j@dax-hpnotebook ComputerVision]$ python autocolortrack.py 
+Trackeando con Kalman Filter...
+/home/dar0j/Documentos/2025/intro trabajo titulo el E/old rasmus/juggling-vision-py/ComputerVision/autocolortrack.py:266: DeprecationWarning: Conversion of an array with ndim > 0 to a scalar is deprecated, and will error in future. Ensure you extract a single element from your array before performing this operation. (Deprecated NumPy 1.25.)
+  return (int(prediction[0]), int(prediction[1]))
+  Frame 0/125 | Trackers: 3
+  Frame 50/125 | Trackers: 3
+  Frame 100/125 | Trackers: 3
+✓ CSV guardado: 3b gifs TRACK 60/3_(0,6).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 3
+  Frame 50/157 | Trackers: 2
+  Frame 100/157 | Trackers: 2
+  Frame 150/157 | Trackers: 2
+✓ CSV guardado: 3b gifs TRACK 60/3_(2,4).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 20.4% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 3
+  Frame 50/157 | Trackers: 3
+  Frame 100/157 | Trackers: 3
+  Frame 150/157 | Trackers: 3
+✓ CSV guardado: 3b gifs TRACK 60/3_(2x,4x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 3
+  Frame 50/157 | Trackers: 2
+  Frame 100/157 | Trackers: 2
+  Frame 150/157 | Trackers: 2
+✓ CSV guardado: 3b gifs TRACK 60/3_(4,2).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 20.4% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 3
+  Frame 50/157 | Trackers: 3
+  Frame 100/157 | Trackers: 3
+  Frame 150/157 | Trackers: 3
+✓ CSV guardado: 3b gifs TRACK 60/3_(4,2x)(2x,4).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 3
+  Frame 50/157 | Trackers: 3
+  Frame 100/157 | Trackers: 3
+  Frame 150/157 | Trackers: 3
+✓ CSV guardado: 3b gifs TRACK 60/3_(4,4)(0,4).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 3
+  Frame 50/157 | Trackers: 3
+  Frame 100/157 | Trackers: 3
+  Frame 150/157 | Trackers: 3
+✓ CSV guardado: 3b gifs TRACK 60/3_(4,4)(4,0).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 3
+  Frame 50/157 | Trackers: 3
+  Frame 100/157 | Trackers: 3
+  Frame 150/157 | Trackers: 3
+✓ CSV guardado: 3b gifs TRACK 60/3_(4x,2x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 3
+  Frame 50/125 | Trackers: 3
+  Frame 100/125 | Trackers: 3
+✓ CSV guardado: 3b gifs TRACK 60/3_(6,0).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/107 | Trackers: 4
+  Frame 50/107 | Trackers: 4
+  Frame 100/107 | Trackers: 4
+✓ CSV guardado: 4b gifs TRACK 60/4_(0,8).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 4
+  Frame 50/125 | Trackers: 4
+  Frame 100/125 | Trackers: 4
+✓ CSV guardado: 4b gifs TRACK 60/4_(2x,6x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 4
+  Frame 50/157 | Trackers: 4
+  Frame 100/157 | Trackers: 4
+  Frame 150/157 | Trackers: 4
+✓ CSV guardado: 4b gifs TRACK 60/4_(4,4).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/157 | Trackers: 4
+  Frame 50/157 | Trackers: 4
+  Frame 100/157 | Trackers: 4
+  Frame 150/157 | Trackers: 4
+✓ CSV guardado: 4b gifs TRACK 60/4_(4x,4x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 3
+  Frame 50/125 | Trackers: 3
+  Frame 100/125 | Trackers: 3
+✓ CSV guardado: 4b gifs TRACK 60/4_(6,6)(2x,2x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 0.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 4
+  Frame 50/125 | Trackers: 4
+  Frame 100/125 | Trackers: 4
+✓ CSV guardado: 4b gifs TRACK 60/4_(6x,2x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 4
+  Frame 50/125 | Trackers: 4
+  Frame 100/125 | Trackers: 4
+✓ CSV guardado: 4b gifs TRACK 60/4_(6x,2x)(2x,6x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/107 | Trackers: 4
+  Frame 50/107 | Trackers: 4
+  Frame 100/107 | Trackers: 4
+✓ CSV guardado: 4b gifs TRACK 60/4_(8,0).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/139 | Trackers: 5
+  Frame 50/139 | Trackers: 5
+  Frame 100/139 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(6x,4x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/139 | Trackers: 5
+  Frame 50/139 | Trackers: 5
+  Frame 100/139 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(6x,4)(4,6x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/139 | Trackers: 5
+  Frame 50/139 | Trackers: 5
+  Frame 100/139 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(4x,6x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/107 | Trackers: 5
+  Frame 50/107 | Trackers: 5
+  Frame 100/107 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(8x,2)(2,8x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/107 | Trackers: 5
+  Frame 50/107 | Trackers: 5
+  Frame 100/107 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(8x,2x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/188 | Trackers: 5
+  Frame 50/188 | Trackers: 5
+  Frame 100/188 | Trackers: 5
+  Frame 150/188 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(6x,0)(6,6)(6,6)(0,6x)(6,6)(6,6).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 5
+  Frame 50/125 | Trackers: 5
+  Frame 100/125 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(6x,2)(6,6)(2,6x)(6,6).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 5
+  Frame 50/125 | Trackers: 5
+  Frame 100/125 | Trackers: 5
+✓ CSV guardado: 5b gifs TRACK 60/5_(6x,6x)(6x,2)(6x,6x)(2,6x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 5
+  Frame 50/125 | Trackers: 5
+  Frame 100/125 | Trackers: 4
+✓ CSV guardado: 6b gifs TRACK 60/6_(6,6).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 49.6% frames con detección
+  Pelota 6: 0.0% frames con detección
+Trackeando con Kalman Filter...
+  Frame 0/125 | Trackers: 5
+  Frame 50/125 | Trackers: 5
+  Frame 100/125 | Trackers: 5
+✓ CSV guardado: 6b gifs TRACK 60/6_(6x,6x).csv
+  Pelota 1: 100.0% frames con detección
+  Pelota 2: 100.0% frames con detección
+  Pelota 3: 100.0% frames con detección
+  Pelota 4: 100.0% frames con detección
+  Pelota 5: 100.0% frames con detección
+  Pelota 6: 0.0% frames con detección
