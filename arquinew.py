@@ -18,10 +18,7 @@ mask_value = -1.0  # mejor que 0 si normalizas a [0,1]
 data_root = "../CSVs/60fps128"  # carpeta raíz
 
 # Loader
-def load_dataset(root, shuffle_balls=False, random_seed=42):
-    if shuffle_balls:
-        np.random.seed(random_seed) 
-    
+def load_dataset(root):
     X_list, y_list = [], []
     label_map = {}
     next_label = 0
@@ -55,15 +52,6 @@ def load_dataset(root, shuffle_balls=False, random_seed=42):
         real_cols = 4 + 2*nballs
         seq[:, :real_cols] = data[:, :real_cols]
         
-        # NUEVO: shuffle columnas de pelotas (antes de normalizar)
-        if shuffle_balls and nballs > 1:
-            for t in range(seq.shape[0]):  # cada frame
-                # Extraer pelotas reales (columnas 4 a 4+2*nballs)
-                balls_idx = slice(hand_feats, hand_feats+2*nballs)
-                balls = seq[t, balls_idx].reshape(nballs, 2)
-                np.random.shuffle(balls)  # mezclar orden
-                seq[t, balls_idx] = balls.flatten()
-        
         seq[:, -1] = nballs / max_balls  # última columna = ball_count normalizado
 
         # Normalización por secuencia (solo frames reales)
@@ -96,8 +84,8 @@ def load_dataset(root, shuffle_balls=False, random_seed=42):
     return X_padded, y_arr, num_classes, label_map
 
 if __name__ == "__main__":
-    # Llamar con shuffle
-    X, y, num_classes, label_map = load_dataset(data_root, shuffle_balls=True)
+    # Cargar dataset:
+    X, y, num_classes, label_map = load_dataset(data_root)
     print("Dataset:", X.shape, y.shape, "num_classes:", num_classes)
     
     # Parámetros CV
