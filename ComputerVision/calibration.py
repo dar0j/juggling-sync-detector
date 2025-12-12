@@ -201,10 +201,10 @@ def analyze_video_params(video_path, hsv_range, num_samples=100, show_detections
 
 
 if __name__ == "__main__":
-    VIDEO_PATH = "/home/dar0j/Documentos/2025/intro trabajo titulo el E/PROJECT/Datasets/5b/5_(6x,4x)_12.mp4"
+    VIDEO_PATH = "/home/dar0j/Documentos/2025/intro trabajo titulo el E/PROJECT/Datasets/5b/5_(6x,4x)_1.mp4"
     
     # Usa tu rango HSV conocido (o el detectado automáticamente)
-    HSV_RANGE = (117, 116, 28, 193, 255, 174)  # del código anterior
+    HSV_RANGE = (156, 87, 74, 176, 223, 117)
     
     # Ejecutar calibración
     params = analyze_video_params(

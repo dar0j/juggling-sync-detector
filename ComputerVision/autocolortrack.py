@@ -253,7 +253,7 @@ class KalmanBallTracker:
         
         # Covarianzas (ajustar según ruido del video)
         self.kf.processNoiseCov = np.eye(4, dtype=np.float32) * 0.5#* 0.03
-        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 10
+        self.kf.measurementNoiseCov = np.eye(2, dtype=np.float32) * 1.0
         
         # Estado inicial
         self.kf.statePost = np.array([initial_pos[0], initial_pos[1], 0, 0], dtype=np.float32)
@@ -446,9 +446,9 @@ def hungarian_assignment_kalman(predictions, detections, max_cost):
 
 if __name__ == "__main__":
     for nball in [3, 4, 5 ,6]:
-        input_dir =  f"/home/dar0j/Documentos/2025/intro trabajo titulo el E/PROJECT/Datasets/{nball}b gifs"
-        video_files = glob(os.path.join(input_dir, "*.gif")) # gif o mp4
-        patternscsvfolder = f"{nball}b gifs TRACK 60"
+        input_dir =  f"/home/dar0j/Documentos/2025/intro trabajo titulo el E/PROJECT/Datasets/{nball}b"
+        video_files = glob(os.path.join(input_dir, "*.mp4")) # GIF O MP4
+        patternscsvfolder = f"{nball}b TRACK 60"
         os.makedirs(patternscsvfolder, exist_ok=True)
 
         for VIDEO_PATH in video_files:            
@@ -459,9 +459,14 @@ if __name__ == "__main__":
                 num_balls=nball,
                 output_csv=os.path.join(patternscsvfolder, f"{vid_name}.csv"),
                 auto_hsv=False,
-                hsv_range=(0, 255, 255, 0, 255, 255), #(117, 116, 28, 193, 255, 174), #0, 30, 50, 20, 255, 255),  # rojo con tolerancia amplia
+                hsv_range=(19, 143, 107, 30, 255, 162),
+                #nicomoradas(0, 0, 0, 255, 185, 114),
+#stephmulti(35, 103, 84, 226, 214, 184),stephrojas:(156, 87, 74, 176, 223, 117),
+#stephmorado(132, 98, 60, 170, 209, 239), #plaza(111, 121, 44, 207, 166, 255), 
+#crisamarillo:(19, 143, 107, 30, 255, 162),#RojoYo:(0, 128, 90, 8, 227, 156), 
+# #GIFS:(0, 255, 255, 0, 255, 255),#stephplaza:(62, 91, 27, 151, 187, 148),
                 min_area=30,
-                max_cost=361,
+                max_cost=271,
                 visualize=True
             )
     # #Kalman Filter auto hsv (needs fix)
