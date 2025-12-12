@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, '.')
 from arquinew import load_dataset, max_features, mask_value
 
-X, y, num_classes, label_map = load_dataset("../CSVs/60fps128", shuffle_balls=True)
+X, y, num_classes, label_map = load_dataset("../CSVs/60fps128")
 
 print("X shape:", X.shape)  # debe ser (n_samples, max_len, 17)
 print("Sample features:", X[0, 0, :])  # última columna debe ser nballs/6

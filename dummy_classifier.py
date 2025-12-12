@@ -11,7 +11,7 @@ X, y, num_classes, label_map = load_dataset(data_root)
 print(f"Dataset: {X.shape}, {num_classes} clases")
 
 # Configuración CV
-K_FOLDS = 6
+K_FOLDS = 5
 skf = StratifiedKFold(n_splits=K_FOLDS, shuffle=True, random_state=42)
 
 # Estrategias dummy
@@ -48,7 +48,7 @@ for fold, (train_idx, test_idx) in enumerate(skf.split(X, y)):
         print(f"{strategy:15} - Acc: {acc:.3f}, F1-macro: {f1:.3f}, Balanced-Acc: {balanced_acc:.3f}")
 
 # Resumen
-print("\n=== BASELINE RESULTS (6-Fold CV) ===")
+print("\n=== BASELINE RESULTS (5-Fold CV) ===")
 for strategy in strategies:
     print(f"\n{strategy.upper()}:")
     for metric, values in results[strategy].items():

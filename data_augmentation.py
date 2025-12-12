@@ -146,7 +146,7 @@ def augment_symmetric_patterns(data_root="../CSVs/60fps128", output_root="../CSV
                 shuffled[t, 4:4+2*nballs] = balls.flatten()
             
             # Guardar con sufijo shuffle_{version}
-            new_fname = f"{nballs_str}_{trickname}_{sample_id}_shuffle{version}.csv"
+            new_fname = f"{nballs_str}_{trickname}_shuffle{version}_{sample_id}.csv"
             output_path = os.path.join(output_root, new_fname)
             pd.DataFrame(shuffled).to_csv(output_path, header=False, index=False)
             augmented_count += 1
@@ -156,5 +156,5 @@ def augment_symmetric_patterns(data_root="../CSVs/60fps128", output_root="../CSV
     print(f"\nTotal shuffled samples: {augmented_count}")
 
 if __name__ == "__main__":
-    augment_dataset()  # flip horizontal
-    augment_symmetric_patterns(num_versions=3)  # shuffle simétricos
+    #augment_dataset()  # flip horizontal
+    augment_symmetric_patterns(num_versions=2)  # shuffle simétricos

@@ -1,8 +1,0 @@
-{
-  "filters_base": 128,
-  "kernel_size": 3,
-  "dilation": 3,
-  "dense_units": 256,
-  "dropout": 0.4000000000000001,
-  "optimizer": "adam"
-}

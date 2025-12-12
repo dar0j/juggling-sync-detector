@@ -1,8 +1,0 @@
-{
-  "filters_base": 32,
-  "kernel_size": 7,
-  "dilation": 2,
-  "dense_units": 256,
-  "dropout": 0.5,
-  "learning_rate": 0.0005
-}

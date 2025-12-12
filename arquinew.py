@@ -39,7 +39,15 @@ def load_dataset(root):
             trick_tokens = tokens[1:-1]
         else:
             trick_tokens = tokens[1:]
-        trickname = "_".join(trick_tokens).lower()
+
+        # NUEVO: filtrar sufijos de augmentación
+        filtered_tokens = []
+        for token in trick_tokens:
+            # Eliminar tokens que empiezan con "shuffle" o "flip"
+            if not (token.startswith('shuffle') or token.startswith('flip')):
+                filtered_tokens.append(token)
+
+        trickname = "_".join(filtered_tokens).lower()
         if trickname == "":
             continue
         if trickname not in label_map:
@@ -89,9 +97,9 @@ if __name__ == "__main__":
     print("Dataset:", X.shape, y.shape, "num_classes:", num_classes)
     
     # Parámetros CV
-    K_FOLDS = 6
-    EPOCHS = 70
-    BATCH = 64
+    K_FOLDS = 5
+    EPOCHS = 120
+    BATCH = 32
     
     os.makedirs("checkpoints", exist_ok=True)
     skf = StratifiedKFold(n_splits=K_FOLDS, shuffle=True, random_state=42)
@@ -106,7 +114,7 @@ if __name__ == "__main__":
         X_train_val, y_train_val = X[train_val_idx], y[train_val_idx]
         test_X, test_y = X[test_idx], y[test_idx]
         
-        sss_val = StratifiedShuffleSplit(n_splits=1, test_size=54, random_state=42+fold)
+        sss_val = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42+fold)
         train_idx, val_idx = next(sss_val.split(X_train_val, y_train_val))
         train_X, train_y = X_train_val[train_idx], y_train_val[train_idx]
         val_X, val_y = X_train_val[val_idx], y_train_val[val_idx]
@@ -134,7 +142,7 @@ if __name__ == "__main__":
         early = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, verbose=1)
         checkpoint = ModelCheckpoint(
             f"checkpoints/fold_{fold+1}_best.h5",
-            monitor='val_acc',
+            monitor='val_acc',#también se puede la val f1_macro o val_balanced_accuracy
             save_best_only=True,
             verbose=0
         )
