@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clasificador de Trucos de Malabarismo</title>
+    <meta charset="utf-8">
+    <link rel="icon" type="image/x-icon" href="static/img/favicon.ico">
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px; 
+            margin: 30px auto; 
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { 
+            text-align: center; 
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        #drop-zone { 
+            border: 3px dashed #667eea; 
+            padding: 60px 20px; 
+            text-align: center;
+            border-radius: 10px;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #drop-zone:hover {
+            background: #e9ecef;
+            border-color: #764ba2;
+        }
+        .controls {
+            margin: 20px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #495057;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        select {
+            cursor: pointer;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 24px;
+        }
+        .checkbox-group input {
+            width: 20px;
+            height: 20px;
+        }
+        .checkbox-group label {
+            margin: 0;
+        }
+        .result { 
+            margin: 10px 0;
+            padding: 15px;
+            background: linear-gradient(90deg, #667eea 0%, rgba(102,126,234,0.1) 100%);
+            border-radius: 8px;
+        }
+        .trick-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .confidence {
+            font-size: 16px;
+            color: #495057;
+        }
+        .progress-bar {
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            color: #0c5460;
+        }
+        .video-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 24px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .video-link:hover {
+            background: #218838;
+        }
+        small {
+            color: #6c757d;
+            font-size: 12px;
+            margin-top: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Clasificador de Trucos de Malabarismo</h1>
+        
+        <div id="drop-zone">
+            <p style="font-size: 20px; color: #667eea;">📹 Arrastra un video aquí o haz clic para seleccionar</p>
+            <p style="color: #6c757d;">Formatos soportados: MP4</p>
+            <input type="file" id="video-input" accept="video/mp4" style="display:none">
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="nballs-select">🎱 Número de pelotas:</label>
+                <select id="nballs-select">
+                    <option value="3">3 pelotas</option>
+                    <option value="4" selected>4 pelotas</option>
+                    <option value="5">5 pelotas</option>
+                    <option value="6">6 pelotas</option>
+                </select>
+                <small>Selecciona cuántas pelotas detectar</small>
+            </div>
+            
+            <div class="control-group">
+                <label for="fps-input">⚡ FPS de procesamiento:</label>
+                <input type="number" id="fps-input" value="60" min="10" max="60" step="5">
+                <small>Mayor FPS = más precisión pero más lento</small>
+            </div>
+            
+            <div class="control-group checkbox-group">
+                <input type="checkbox" id="create-video-check" checked>
+                <label for="create-video-check">📹 Generar video con detecciones</label>
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const input = document.getElementById('video-input');
+        const nballsSelect = document.getElementById('nballs-select');
+        const fpsInput = document.getElementById('fps-input');
+        const createVideoCheck = document.getElementById('create-video-check');
+        
+        dropZone.onclick = () => input.click();
+        input.onchange = uploadVideo;
+        
+        // Drag & drop
+        dropZone.ondragover = (e) => {
+            e.preventDefault();
+            dropZone.style.background = '#e9ecef';
+        };
+        dropZone.ondragleave = () => {
+            dropZone.style.background = '#f8f9fa';
+        };
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.style.background = '#f8f9fa';
+            input.files = e.dataTransfer.files;
+            uploadVideo();
+        };
+        
+        function uploadVideo() {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('video', file);
+            formData.append('nballs', nballsSelect.value);
+            formData.append('fps', fpsInput.value);
+            formData.append('create_video', createVideoCheck.checked);
+            
+            document.getElementById('results').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <h3>Procesando ${file.name}...</h3>
+                    <p>🎱 Pelotas: ${nballsSelect.value} | ⚡ FPS: ${fpsInput.value}</p>
+                    <p style="color: #6c757d;">Esto puede tomar hasta 3 minutos...</p>
+                </div>
+            `;
+            
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    let html = '<h2>🎉 Resultados:</h2>';
+                    
+                    // Info del procesamiento
+                    html += `<div class="info">
+                        📊 Frames procesados: ${data.n_frames} | 
+                        🎱 Pelotas configuradas: ${nballsSelect.value} | 
+                        ⚡ FPS: ${fpsInput.value}
+                    </div>`;
+                    
+                    // Top predicciones
+                    data.predictions.forEach((p, i) => {
+                        const percentage = (p[1] * 100).toFixed(1);
+                        html += `<div class="result">
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span class="trick-name">${i+1}. ${p[0]}</span>
+                                    <span class="confidence">${percentage}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${percentage}%"></div>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                    
+                    // Link de descarga del video
+                    if (data.video_url) {
+                        html += `
+                            <div style="text-align: center; margin-top: 20px;">
+                                <a href="${data.video_url}" class="video-link">
+                                    📥 Descargar video con detecciones
+                                </a>
+                            </div>
+                        `;
+                    }
+                    
+                    document.getElementById('results').innerHTML = html;
+                } else {
+                    document.getElementById('results').innerHTML = `
+                        <div class="result" style="background: #f8d7da; color: #721c24;">
+                            ❌ Error: ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(err => {
+                document.getElementById('results').innerHTML = `
+                    <div class="result" style="background: #f8d7da; color: #721c24;">
+                        ❌ Error de conexión: ${err.message}
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

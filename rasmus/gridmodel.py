@@ -2,9 +2,9 @@ import cv2
 import numpy as np
 from keras.models import load_model
 from keras.utils.generic_utils import CustomObjectScope
-from losses import grid_loss_with_hands
-from preprocessing import MovingAveragePreprocessor
-from postprocessing import BallsAndHandsPostprocessor, gridToBallsAndHands, flipGrid
+from rasmus.losses import grid_loss_with_hands
+from rasmus.preprocessing import MovingAveragePreprocessor
+from rasmus.postprocessing import BallsAndHandsPostprocessor, gridToBallsAndHands, flipGrid
 
 
 class GridModel:
