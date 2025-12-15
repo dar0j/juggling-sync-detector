@@ -264,7 +264,7 @@ def create_overlay_video(video_path, output_path, grid_model, predictions, fps=3
             
             # Overlay con predicción (panel superior semi-transparente)
             overlay = frame.copy()
-            panel_height = 150
+            panel_height = 200
             cv2.rectangle(overlay, (0, 0), (width, panel_height), (0, 0, 0), -1)
             cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
             
