@@ -5,6 +5,7 @@ Detecta siteswap síncrono a partir de tracks de pelotas (CSV) sin usar manos.
 CSV: columnas sin header: x_ball1,y_ball1,x_ball2,y_ball2,...
 Salida: periodos y siteswap estimado.
 NUEVO: Procesa automáticamente todos los CSVs en carpetas "Nb TRACK 60"
+VALIDACIÓN: Solo considera válidos los patrones cuyo promedio == número de pelotas
 """
 
 import numpy as np
@@ -49,6 +50,51 @@ def interpolate_missing_detections(df):
         # Forward/backward fill para extremos
         df_interp[col] = df_interp[col].fillna(method='bfill').fillna(method='ffill')
     return df_interp
+
+# ----------- Siteswap validation (from ss_sorter.py) -----------
+def siteswap_char_to_int(ch):
+    """Convierte un caracter de siteswap a su valor numérico"""
+    if ch.isdigit():
+        return int(ch)
+    elif ch.isalpha():
+        return 10 + ord(ch.lower()) - ord('a')
+    else:
+        raise ValueError(f"Invalid character: {ch}")
+
+def verificar_ss(ss, b):
+    """
+    Verificar que el promedio del siteswap sea EXACTAMENTE igual al número de pelotas.
+    Esta es la condición NECESARIA (aunque no suficiente) para que sea un siteswap válido.
+    
+    Args:
+        ss (str): El siteswap a verificar, ej: "(6x,2x)(2x,2x)"
+        b (int): Número de pelotas esperado
+    
+    Returns:
+        bool: True si promedio == b, False en caso contrario
+    """
+    try:
+        # Limpiar el string: remover paréntesis y 'x'
+        trim = ss.strip("()")
+        limpio = trim.replace("x", "")
+        
+        # Separar por comas y paréntesis
+        resultado = re.split(r'[,)(]+', limpio)
+        resultado = [r for r in resultado if r]  # Remover strings vacíos
+        
+        if not resultado:
+            return False
+        
+        # Convertir a valores numéricos
+        values = [siteswap_char_to_int(ch) for ch in resultado]
+        
+        # Calcular promedio
+        avg = sum(values) / len(values)
+        
+        # Verificar si coincide EXACTAMENTE con el número de pelotas
+        return abs(avg - b) < 0.01  # Tolerancia para errores de punto flotante
+    except Exception:
+        return False
 
 # ----------- Peak detection per ball (ahora detecta MÁXIMOS) -----------
 def detect_y_maxima_per_ball(df, ball_index,
@@ -206,67 +252,179 @@ def maximal_rotation(seq):
     rotations = [rotate_sequence(seq, k) for k in range(n)]
     return max(rotations)
 
-def find_largest_repeating_pattern(siteswap_str):
+def find_largest_repeating_pattern(siteswap_str, num_balls):
     """
-    Encuentra el subpatrón que MÁS VECES CONSECUTIVAS se repite EN CUALQUIER POSICIÓN
-    dentro del siteswap detectado.
+    Encuentra el subpatrón VÁLIDO que más se repite, PRIORIZANDO repeticiones consecutivas.
+    
+    VALIDEZ: Solo considera válido un patrón si su promedio == num_balls
     
     Args:
         siteswap_str: string del siteswap completo
+        num_balls: número de pelotas (REQUERIDO para validación)
     
     Returns:
-        str: subpatrón que más veces se repite consecutivamente
+        dict con:
+        - pattern: str del mejor patrón encontrado
+        - repetitions: int número de apariciones totales
+        - consecutive_reps: int número de repeticiones consecutivas máximas
+        - is_valid: bool si promedio == num_balls
+        - avg: float promedio calculado del patrón
     
-    Lógica: Para cada longitud de subpatrón y cada posición de inicio,
-    cuenta cuántas veces aparece consecutivamente.
-    Devuelve el subpatrón con mayor número de repeticiones consecutivas.
+    Lógica:
+    1. Calcula AMBAS métricas: consecutivas Y totales
+    2. PRIORIDAD: consecutivas > totales > longitud
+    3. Si empate en consecutivas, usa totales como desempate
     """
     pairs = re.findall(r'\([^)]+\)', siteswap_str)
     n = len(pairs)
     
     if n == 0:
-        return ""
+        return {'pattern': "", 'repetitions': 0, 'consecutive_reps': 0, 'is_valid': False, 'avg': 0.0}
     
     best_pattern = ""
-    best_repetitions = 0
+    best_total_reps = 0
+    best_consecutive_reps = 0
     best_length = 0
+    best_is_valid = False
+    best_avg = 0.0
     
     # Probar cada longitud de subpatrón posible (de 1 hasta n)
     for pattern_len in range(1, n + 1):
-        # Probar cada posición de inicio posible
+        # Diccionario para guardar info de cada patrón único
+        pattern_info = {}
+        
+        # Recorrer todas las posiciones
         for start_pos in range(n - pattern_len + 1):
             pattern = ''.join(pairs[start_pos:start_pos + pattern_len])
             
-            # Contar cuántas veces se repite consecutivamente desde esta posición
-            repetitions = 0
-            i = start_pos
-            while i + pattern_len <= n:
-                candidate = ''.join(pairs[i:i+pattern_len])
-                if candidate == pattern:
-                    repetitions += 1
-                    i += pattern_len
-                else:
-                    break  # Si no coincide, dejar de contar desde esta posición
+            if pattern not in pattern_info:
+                # Primera vez que vemos este patrón
+                is_valid = verificar_ss(pattern, num_balls)
+                
+                try:
+                    trim = pattern.strip("()")
+                    limpio = trim.replace("x", "")
+                    resultado = re.split(r'[,)(]+', limpio)
+                    resultado = [r for r in resultado if r]
+                    values = [siteswap_char_to_int(ch) for ch in resultado]
+                    avg = sum(values) / len(values) if values else 0.0
+                except:
+                    avg = 0.0
+                
+                # Calcular repeticiones CONSECUTIVAS desde esta posición
+                consecutive = 0
+                i = start_pos
+                while i + pattern_len <= n:
+                    candidate = ''.join(pairs[i:i+pattern_len])
+                    if candidate == pattern:
+                        consecutive += 1
+                        i += pattern_len
+                    else:
+                        break
+                
+                pattern_info[pattern] = {
+                    'total_count': 1,
+                    'max_consecutive': consecutive,
+                    'is_valid': is_valid,
+                    'avg': avg
+                }
+            else:
+                # Ya vimos este patrón, actualizar
+                pattern_info[pattern]['total_count'] += 1
+                
+                # Calcular consecutivas desde ESTA posición
+                consecutive = 0
+                i = start_pos
+                while i + pattern_len <= n:
+                    candidate = ''.join(pairs[i:i+pattern_len])
+                    if candidate == pattern:
+                        consecutive += 1
+                        i += pattern_len
+                    else:
+                        break
+                
+                # Actualizar máximo de consecutivas
+                pattern_info[pattern]['max_consecutive'] = max(
+                    pattern_info[pattern]['max_consecutive'],
+                    consecutive
+                )
+        
+        # Evaluar todos los patrones de esta longitud
+        for pattern, info in pattern_info.items():
+            total_reps = info['total_count']
+            consecutive_reps = info['max_consecutive']
+            is_valid = info['is_valid']
+            avg = info['avg']
             
-            # Actualizar mejor patrón si:
-            # 1. Tiene más repeticiones, O
-            # 2. Mismo número de repeticiones pero es más largo
-            if repetitions > best_repetitions or \
-               (repetitions == best_repetitions and pattern_len > best_length):
+            # Actualizar mejor patrón con PRIORIDAD:
+            # 1. Válido > inválido
+            # 2. Más repeticiones CONSECUTIVAS
+            # 3. Si empate consecutivas: más repeticiones TOTALES
+            # 4. Si empate totales: más largo
+            is_better = False
+            
+            if is_valid and not best_is_valid:
+                # Este es válido y el anterior no -> MEJOR
+                is_better = True
+            elif is_valid == best_is_valid:
+                # Ambos válidos o ambos inválidos
+                if consecutive_reps > best_consecutive_reps:
+                    # Más repeticiones consecutivas -> MEJOR
+                    is_better = True
+                elif consecutive_reps == best_consecutive_reps:
+                    # Empate en consecutivas, usar totales
+                    if total_reps > best_total_reps:
+                        is_better = True
+                    elif total_reps == best_total_reps and pattern_len > best_length:
+                        is_better = True
+            
+            if is_better:
                 best_pattern = pattern
-                best_repetitions = repetitions
+                best_total_reps = total_reps
+                best_consecutive_reps = consecutive_reps
                 best_length = pattern_len
+                best_is_valid = is_valid
+                best_avg = avg
     
-    # Si no encontramos ningún patrón que se repita al menos 2 veces,
-    # devolver la secuencia completa
-    if best_repetitions < 2:
-        return siteswap_str
+    # Si no encontramos patrón que aparezca ≥2 veces, devolver secuencia completa
+    if best_total_reps < 2:
+        is_valid_full = verificar_ss(siteswap_str, num_balls)
+        try:
+            trim = siteswap_str.strip("()")
+            limpio = trim.replace("x", "")
+            resultado = re.split(r'[,)(]+', limpio)
+            resultado = [r for r in resultado if r]
+            values = [siteswap_char_to_int(ch) for ch in resultado]
+            avg_full = sum(values) / len(values) if values else 0.0
+        except:
+            avg_full = 0.0
+            
+        return {
+            'pattern': siteswap_str,
+            'repetitions': 1,
+            'consecutive_reps': 1,
+            'is_valid': is_valid_full,
+            'avg': avg_full
+        }
     
-    return best_pattern
+    return {
+        'pattern': best_pattern,
+        'repetitions': best_total_reps,
+        'consecutive_reps': best_consecutive_reps,
+        'is_valid': best_is_valid,
+        'avg': best_avg
+    }
 
-def substring_match_metric(expected, detected):
+def substring_match_metric(expected, detected, num_balls):
     """
-    Métrica mejorada: compara el esperado con el PATRÓN MÁS GRANDE dentro del detectado.
+    Métrica mejorada: compara el esperado con el PATRÓN MÁS REPETIDO Y VÁLIDO del detectado.
+    
+    VALIDEZ: Solo considera válido si promedio == num_balls
+    
+    Args:
+        expected: patrón esperado
+        detected: patrón detectado
+        num_balls: número de pelotas (REQUERIDO)
     
     Returns:
         dict con:
@@ -282,13 +440,20 @@ def substring_match_metric(expected, detected):
             'pattern_match': False,
             'substring_match': False, 
             'coverage': 0.0,
-            'largest_pattern': ''
+            'largest_pattern': '',
+            'pattern_valid': False,
+            'repetitions': 0,
+            'pattern_avg': 0.0
         }
     
     exact = (expected == detected)
     
-    # Encontrar patrón más grande en el detectado
-    largest_pattern = find_largest_repeating_pattern(detected)
+    # Encontrar patrón más repetido VÁLIDO en el detectado
+    pattern_info = find_largest_repeating_pattern(detected, num_balls)
+    largest_pattern = pattern_info['pattern']
+    pattern_valid = pattern_info['is_valid']
+    repetitions = pattern_info['repetitions']
+    pattern_avg = pattern_info['avg']
     
     # Verificar si el patrón más grande coincide con el esperado
     # (considerando todas las rotaciones del patrón)
@@ -322,7 +487,10 @@ def substring_match_metric(expected, detected):
         'pattern_match': pattern_match,
         'substring_match': substring,
         'coverage': coverage,
-        'largest_pattern': largest_pattern
+        'largest_pattern': largest_pattern,
+        'pattern_valid': pattern_valid,
+        'repetitions': repetitions,
+        'pattern_avg': pattern_avg
     }
 
 # ----------- Visualización mejorada (SIN holds, más limpia) -----------
@@ -384,8 +552,8 @@ def pipeline(csv_path, n_balls=None,
              smooth_window=9, smooth_poly=3,
              prominence=6, distance=8,
              frame_window=7,
-             use_median=True,  # NUEVO: usar mediana en vez de promedio
-             interpolate=True,  # NUEVO: interpolar detecciones faltantes
+             use_median=True,
+             interpolate=True,
              visualize=False):
 
     df = load_tracks(csv_path, has_header=False)
@@ -410,7 +578,7 @@ def pipeline(csv_path, n_balls=None,
 
     if not all_peaks:
         return {'pairs':[], 'period': [], 'siteswap':'', 'siteswap_canonical': '', 
-                'period_length': 0, 'x_center': None, 'metrics': {}}
+                'period_length': 0, 'x_center': None, 'n_balls': n_balls}
 
     # MEDIANA vs PROMEDIO: mediana es más robusta ante outliers
     all_x = [p[2] for p in all_peaks]
@@ -443,14 +611,14 @@ def pipeline(csv_path, n_balls=None,
         'period_length': period_length,
         'x_center': x_center,
         'beats': beats,
-        'num_peaks': len(all_peaks)
+        'num_peaks': len(all_peaks),
+        'n_balls': n_balls
     }
 
 
 # ----------- Batch processing -----------
 def process_all_folders(base_dir='.', nballs_list=[3,4,5,6], visualize=False, 
                        output_json='results.json',
-                       # PARÁMETROS GENERALIZABLES
                        smooth_window=9, smooth_poly=3,
                        prominence=6, distance=8, frame_window=7,
                        use_median=True, interpolate=True):
@@ -470,7 +638,7 @@ def process_all_folders(base_dir='.', nballs_list=[3,4,5,6], visualize=False,
     results = {}
     
     for nballs in nballs_list:
-        folder_name = f"{nballs}b TRACK 60"
+        folder_name = f"{nballs}b TRACK 60" #f"{nballs}b gifs TRACK 60"
         folder_path = base_path / folder_name
         
         if not folder_path.exists():
@@ -508,43 +676,64 @@ def process_all_folders(base_dir='.', nballs_list=[3,4,5,6], visualize=False,
                 filename = csv_file.stem
                 expected = filename.split('_')[1] if '_' in filename else 'unknown'
                 
-                # MÉTRICAS DE COMPARACIÓN (usando patrón más grande)
-                metrics_simple = substring_match_metric(expected, result['siteswap'])
-                metrics_canonical = substring_match_metric(expected, result['siteswap_canonical'])
+                # MÉTRICAS DE COMPARACIÓN (usando patrón más repetido VÁLIDO)
+                metrics_simple = substring_match_metric(expected, result['siteswap'], nballs)
+                metrics_canonical = substring_match_metric(expected, result['siteswap_canonical'], nballs)
                 
-                # Tomar la mejor métrica entre simple y canónica
-                best_metrics = metrics_canonical if metrics_canonical['coverage'] > metrics_simple['coverage'] else metrics_simple
+                # Tomar la mejor métrica PRIORIZANDO VALIDEZ
+                if metrics_canonical['pattern_valid'] and not metrics_simple['pattern_valid']:
+                    best_metrics = metrics_canonical
+                elif metrics_simple['pattern_valid'] and not metrics_canonical['pattern_valid']:
+                    best_metrics = metrics_simple
+                elif metrics_canonical['coverage'] > metrics_simple['coverage']:
+                    best_metrics = metrics_canonical
+                elif metrics_canonical['coverage'] == metrics_simple['coverage']:
+                    # Si coverage igual, preferir más repeticiones
+                    best_metrics = metrics_canonical if metrics_canonical['repetitions'] > metrics_simple['repetitions'] else metrics_simple
+                else:
+                    best_metrics = metrics_simple
                 
                 results[csv_file.name] = {
                     'expected': expected,
                     'detected': result['siteswap'],
                     'detected_canonical': result['siteswap_canonical'],
                     'largest_pattern': best_metrics['largest_pattern'],
+                    'pattern_valid': best_metrics['pattern_valid'],
+                    'pattern_avg': best_metrics['pattern_avg'],
+                    'repetitions': best_metrics['repetitions'],
+                    'consecutive_reps': best_metrics['consecutive_reps'],
                     'period_length': result['period_length'],
                     'x_center': result['x_center'],
                     'num_peaks': result['num_peaks'],
                     'num_beats': len(result['pairs']),
-                    # MÉTRICAS MEJORADAS
+                    'num_balls': nballs,
+                    # MÉTRICAS
                     'exact_match': best_metrics['exact_match'],
-                    'pattern_match': best_metrics['pattern_match'],  # NUEVO
+                    'pattern_match': best_metrics['pattern_match'],
                     'substring_match': best_metrics['substring_match'],
                     'coverage': best_metrics['coverage']
                 }
                 
-                # Símbolos de resultado (ahora pattern_match tiene prioridad)
+                # Símbolos de resultado CONSIDERANDO VALIDEZ
                 if best_metrics['exact_match']:
                     status = "✓✓✓"  # exacto
+                elif best_metrics['pattern_match'] and best_metrics['pattern_valid']:
+                    status = "✓✓"   # patrón válido (avg == nballs) que coincide
                 elif best_metrics['pattern_match']:
-                    status = "✓✓"   # patrón más grande coincide
+                    status = "✓"    # patrón coincide pero inválido (avg ≠ nballs)
                 elif best_metrics['substring_match']:
-                    status = "✓"    # substring
+                    status = "~"    # substring
                 elif best_metrics['coverage'] > 0.5:
                     status = "~"    # parcial
                 else:
                     status = "✗"    # fallo
                 
+                valid_symbol = "✓" if best_metrics['pattern_valid'] else "✗"
+                
                 print(f"    Esperado:        {expected}")
                 print(f"    Patrón grande:   {best_metrics['largest_pattern']} {status}")
+                print(f"    Válido:          {valid_symbol} (avg={best_metrics['pattern_avg']:.1f}, esperado={nballs})")
+                print(f"    Repeticiones:    {best_metrics['repetitions']}x")
                 print(f"    Detectado full:  {result['siteswap']}")
                 print(f"    Canónico:        {result['siteswap_canonical']}")
                 print(f"    Coverage:        {best_metrics['coverage']*100:.0f}%")
@@ -572,25 +761,36 @@ def process_all_folders(base_dir='.', nballs_list=[3,4,5,6], visualize=False,
     # Estadísticas detalladas
     total = len(results)
     exact = sum(1 for r in results.values() if r.get('exact_match', False))
-    pattern = sum(1 for r in results.values() if r.get('pattern_match', False) and not r.get('exact_match', False))
-    substring = sum(1 for r in results.values() if r.get('substring_match', False) and not r.get('pattern_match', False))
-    partial = sum(1 for r in results.values() if r.get('coverage', 0) > 0.5 and not r.get('substring_match', False))
+    pattern_valid = sum(1 for r in results.values() 
+                       if r.get('pattern_match', False) and r.get('pattern_valid', False) 
+                       and not r.get('exact_match', False))
+    pattern_invalid = sum(1 for r in results.values() 
+                         if r.get('pattern_match', False) and not r.get('pattern_valid', False)
+                         and not r.get('exact_match', False))
+    substring = sum(1 for r in results.values() 
+                   if r.get('substring_match', False) and not r.get('pattern_match', False))
+    partial = sum(1 for r in results.values() 
+                 if r.get('coverage', 0) > 0.5 and not r.get('substring_match', False))
     errors = sum(1 for r in results.values() if 'error' in r)
     
     print(f"\nEstadísticas:")
-    print(f"  Total procesados:         {total}")
-    print(f"  Exactas (✓✓✓):            {exact} ({exact/total*100:.1f}%)")
-    print(f"  Patrón grande (✓✓):       {pattern} ({pattern/total*100:.1f}%)")
-    print(f"  Substring (✓):            {substring} ({substring/total*100:.1f}%)")
-    print(f"  Parciales (>50%, ~):      {partial} ({partial/total*100:.1f}%)")
-    print(f"  Errores (✗):              {errors}")
+    print(f"  Total procesados:            {total}")
+    print(f"  Exactas (✓✓✓):               {exact} ({exact/total*100:.1f}%)")
+    print(f"  Patrón válido (✓✓):          {pattern_valid} ({pattern_valid/total*100:.1f}%)")
+    print(f"  Patrón inválido (✓):         {pattern_invalid} ({pattern_invalid/total*100:.1f}%)")
+    print(f"  Substring (~):               {substring} ({substring/total*100:.1f}%)")
+    print(f"  Parciales (>50%, ~):         {partial} ({partial/total*100:.1f}%)")
+    print(f"  Errores (✗):                 {errors}")
     
-    # Accuracy considerando pattern_match como correcto
-    accuracy = (exact + pattern) / total if total > 0 else 0
-    print(f"  Accuracy (exacto+patrón): {accuracy*100:.1f}%")
+    # Accuracy ESTRICTO: solo exactos + patrones válidos
+    accuracy = (exact + pattern_valid) / total if total > 0 else 0
+    print(f"  Accuracy (exacto+válido):    {accuracy*100:.1f}%")
     
     avg_coverage = np.mean([r.get('coverage', 0) for r in results.values() if 'coverage' in r])
-    print(f"  Coverage promedio:        {avg_coverage*100:.1f}%")
+    print(f"  Coverage promedio:           {avg_coverage*100:.1f}%")
+    
+    valid_patterns = sum(1 for r in results.values() if r.get('pattern_valid', False))
+    print(f"  Patrones válidos totales:    {valid_patterns} ({valid_patterns/total*100:.1f}%)")
     
     return results
 
@@ -629,6 +829,11 @@ if __name__ == "__main__":
             interpolate=not args.no_interpolate
         )
     elif args.csv:
+        if not args.nballs:
+            print("ERROR: --nballs es requerido para validación")
+            parser.print_help()
+            exit(1)
+            
         out = pipeline(args.csv, n_balls=args.nballs, 
                       smooth_window=args.smooth_window,
                       prominence=args.prominence,
@@ -645,5 +850,14 @@ if __name__ == "__main__":
         print(f"Periodo (beats):     {out['period_length']}")
         print(f"x_center usado:      {out['x_center']:.1f}")
         print(f"Picos detectados:    {out['num_peaks']}")
+        
+        # Validar patrón detectado
+        print(f"\nPATRÓN MÁS REPETIDO:")
+        pattern_info = find_largest_repeating_pattern(out['siteswap'], args.nballs)
+        print(f"  Patrón:            {pattern_info['pattern']}")
+        print(f"  Repeticiones:      {pattern_info['repetitions']}x")
+        print(f"  Promedio:          {pattern_info['avg']:.1f}")
+        print(f"  Esperado:          {args.nballs}")
+        print(f"  Válido:            {'✓' if pattern_info['is_valid'] else '✗'} (avg {'==' if pattern_info['is_valid'] else '!='} nballs)")
     else:
         parser.print_help()
