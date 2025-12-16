@@ -5,6 +5,8 @@ REPORTE DE CLASIFICACIÓN MULTICLASE - SITESWAP DETECTION
 Total de muestras válidas: 223
 Total de clases (label_map): 27
 Predicciones fuera de label_map: 165
+Predicciones correctas:        40
+Predicciones incorrectas:      18
 
 ======================================================================
 SECCIÓN 1: MÉTRICAS SOBRE TODAS LAS MUESTRAS
