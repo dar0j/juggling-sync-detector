@@ -34,9 +34,9 @@ def find_videos(source_dir: Path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="100ep 1800imgs/best.pt")
+    ap.add_argument("--model", default="200ep 1800nano/best.pt")#130ep 1.8k m/best.pt")
     ap.add_argument("--source", default="../Datasets/used to track")
-    ap.add_argument("--out_dir", default="runs/dets_cache_all")
+    ap.add_argument("--out_dir", default="runs/dets_cache_all_n")#_m
     ap.add_argument("--conf", type=float, default=0.25)
     ap.add_argument("--iou", type=float, default=0.7)
     ap.add_argument("--imgsz", type=int, default=None)

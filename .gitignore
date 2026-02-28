@@ -1,9 +1,16 @@
 _*
 *.h5
 *.csv
-old2/
 hp
 cec
 tuner_results/
 *.png
 uploads/
+#venvs (code was not here but in a earlier process it was ignored, now its deleted)
+juggling/
+old2/
+
+ocsort/
+MODELS/
+**/configs/
+**/datasets/

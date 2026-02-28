@@ -385,7 +385,7 @@ def main():
                     help="Carpeta con archivos .ndjson de detecciones")
     ap.add_argument("--video_root", default="../Datasets/used to track",
                     help="Raíz de carpetas 'already *' con videos")
-    ap.add_argument("--out_dir", default="runs/track_csvs_fragment_repair",
+    ap.add_argument("--out_dir", default="runs/track_csvs2",
                     help="Carpeta de salida para CSVs")
     # OC-SORT params (tus valores optimizados)
     ap.add_argument("--det_thresh", type=float, default=0.57)

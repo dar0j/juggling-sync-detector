@@ -1,63 +1,37 @@
-# app.py - CON SELECTOR DINÁMICO DE NÚMERO DE PELOTAS + COMPUTER VISION PIPELINE
+# app.py - YOLO NANO + OC-SORT + TCN per-nballs + Computer Vision Pipeline
 from flask import Flask, request, jsonify, render_template, send_file
 import os
 import cv2
 import numpy as np
-from predict_trick import extract_coordinates_from_video, preprocess_sequence, predict_trick, create_overlay_video
 import sys
 sys.path.append("./rasmus")
 sys.path.append("./ComputerVision")
-from gridmodel import GridModel
-from tensorflow.keras.models import load_model
 import json
-import tensorflow as tf
-from tensorflow.python.keras import backend as K
 import base64
-from io import BytesIO
-from PIL import Image
+import traceback
 
 # Importar módulos de Computer Vision
 from calibration import analyze_video_params
 from autocolortrack import track_balls_with_kalman, auto_extract_hsv_range
 from nohandlebars import pipeline as siteswap_pipeline
 
+# Importar nuevo pipeline DL
+from pipeline_dl import DLPipeline
+
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ============ Configurar sesión global de TF 1.x ============
-session = tf.compat.v1.Session()
-K.set_session(session)
-graph = tf.compat.v1.get_default_graph()
-# ============================================================
+# ============ Inicializar pipeline DL (YOLO + OC-SORT + TCN) ============
+print("Inicializando pipeline Deep Learning...")
+dl_pipeline = DLPipeline(
+    yolo_model_path="MODELS/NANO.pt",
+    models_dir="MODELS/VIDEO",
+    ocsort_vendor_dir="ocsort"
+)
+print("✓ Pipeline DL listo")
+# =========================================================================
 
-# Cache para GridModels (evitar recargar el mismo modelo)
-grid_models_cache = {}
-
-# Cargar TCN model y label_map al inicio (estos no cambian)
-print("Cargando modelo TCN...")
-with graph.as_default():
-    K.set_session(session)
-    tcn_model = load_model("fold_3_best.h5")
-    with open("label_map.json") as f:
-        label_map = json.load(f)
-print("✓ Modelo TCN cargado")
-
-def get_grid_model(nballs):
-    """
-    Obtiene GridModel para el número de pelotas especificado.
-    Usa cache para evitar recargar modelos ya cargados.
-    """
-    if nballs not in grid_models_cache:
-        print(f"Cargando GridModel para {nballs} pelotas...")
-        with graph.as_default():
-            K.set_session(session)
-            grid_models_cache[nballs] = GridModel(
-                "../grid_models/grid_model_submovavg_128x128.h5", 
-                nBalls=nballs
-            )
-        print(f"✓ GridModel para {nballs} pelotas cargado")
-    return grid_models_cache[nballs]
 
 def frame_to_base64(frame):
     """Convierte frame de OpenCV a base64 para enviar al frontend"""
@@ -68,15 +42,15 @@ def frame_to_base64(frame):
         new_width = 640
         new_height = int(height * scale)
         frame = cv2.resize(frame, (new_width, new_height))
-    
-    # Convertir a JPEG
     _, buffer = cv2.imencode('.jpg', frame)
     img_base64 = base64.b64encode(buffer).decode('utf-8')
     return f"data:image/jpeg;base64,{img_base64}"
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/extract_frames', methods=['POST'])
 def extract_frames():
@@ -108,9 +82,9 @@ def extract_frames():
         })
         
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
+
 
 @app.route('/preview_mask', methods=['POST'])
 def preview_mask():
@@ -137,7 +111,7 @@ def preview_mask():
         # Aplicar máscara HSV
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         h_min, s_min, v_min, h_max, s_max, v_max = hsv_range
-        mask = cv2.inRange(hsv, np.array([h_min, s_min, v_min]), 
+        mask = cv2.inRange(hsv, np.array([h_min, s_min, v_min]),
                                  np.array([h_max, s_max, v_max]))
         
         # Aplicar máscara al frame original
@@ -154,9 +128,9 @@ def preview_mask():
         })
         
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
+
 
 @app.route('/calibrate_tracking', methods=['POST'])
 def calibrate_tracking():
@@ -178,7 +152,7 @@ def calibrate_tracking():
         
         if params is None:
             return jsonify({
-                'success': False, 
+                'success': False,
                 'error': 'No se detectaron pelotas. Ajusta el rango HSV.'
             })
         
@@ -198,13 +172,13 @@ def calibrate_tracking():
         })
         
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
+
 @app.route('/process_computervision', methods=['POST'])
 def process_computervision():
-    """Pipeline completo: Tracking + Siteswap Detection"""
+    """Pipeline Computer Vision: HSV tracking + Siteswap Detection"""
     data = request.get_json()
     video_filename = data['video_path']
     nballs = int(data['nballs'])
@@ -212,7 +186,8 @@ def process_computervision():
     tracking_params = data['tracking_params']
     
     video_path = os.path.join(UPLOAD_FOLDER, video_filename)
-    csv_path = os.path.join(UPLOAD_FOLDER, f"tracking_{video_filename.replace('.mp4', '.csv')}")
+    csv_path = os.path.join(UPLOAD_FOLDER,
+                            f"tracking_{video_filename.replace('.mp4', '.csv')}")
     
     try:
         # PASO 1: Tracking con Kalman Filter
@@ -244,8 +219,8 @@ def process_computervision():
         )
         
         # Limpiar archivos temporales
-        os.remove(video_path)
-        os.remove(csv_path)
+        if os.path.exists(csv_path):
+            os.remove(csv_path)
         
         return jsonify({
             'success': True,
@@ -257,83 +232,134 @@ def process_computervision():
         })
         
     except Exception as e:
-        # Limpiar en caso de error
-        if os.path.exists(video_path):
-            os.remove(video_path)
         if os.path.exists(csv_path):
             os.remove(csv_path)
-        
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
+
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Pipeline Deep Learning (original)"""
-    # Recibir video y parámetros
+    """Pipeline Deep Learning: YOLO NANO → OC-SORT → TCN per-nballs"""
     video = request.files['video']
-    nballs = int(request.form.get('nballs', 4))  # Número de pelotas
-    fps = int(request.form.get('fps', 60))
-    create_video = request.form.get('create_video', 'false') == 'true'
+    nballs = int(request.form.get('nballs', 4))
     
     video_path = os.path.join(UPLOAD_FOLDER, video.filename)
     video.save(video_path)
     
     try:
-        # Cargar GridModel apropiado para el número de pelotas
-        grid_model = get_grid_model(nballs)
+        print(f"Procesando {video.filename} con {nballs} pelotas (DL pipeline)...")
         
-        # Procesar
-        print(f"Procesando {video.filename} con {nballs} pelotas a {fps} fps...")
+        result = dl_pipeline.process_video(
+            video_path=video_path,
+            nballs=nballs,
+            top_k=5
+        )
         
-        # ============ FIX: Usar sesión dentro del contexto ============
-        with graph.as_default():
-            K.set_session(session)
-            coords, n_balls = extract_coordinates_from_video(
-                video_path, grid_model, target_fps=fps
-            )
-            preprocessed = preprocess_sequence(coords, n_balls)
-            predictions = predict_trick(tcn_model, preprocessed, label_map, top_k=5)
+        # Limpiar video
+        if os.path.exists(video_path):
+            os.remove(video_path)
         
-        result = {
+        return jsonify({
             'success': True,
-            'predictions': predictions,
-            'n_balls': int(n_balls),
-            'n_frames': int(coords.shape[0])
-        }
-        
-        # Crear video con overlay si se solicita
-        if create_video:
-            output_path = os.path.join(UPLOAD_FOLDER, f"result_{video.filename}")
-            print(f"Generando video con overlay...")
-            with graph.as_default():
-                K.set_session(session)
-                create_overlay_video(
-                    video_path, 
-                    output_path, 
-                    grid_model,
-                    predictions, 
-                    fps=fps
-                )
-            result['video_url'] = f'/download/{os.path.basename(output_path)}'
-            print(f"✓ Video guardado en {output_path}")
-        
-        # Limpiar video original
-        os.remove(video_path)
-        
-        return jsonify(result)
+            'predictions': result['predictions'],
+            'n_balls': result['n_balls'],
+            'n_frames': result['n_frames'],
+        })
         
     except Exception as e:
         if os.path.exists(video_path):
             os.remove(video_path)
-        import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
+
+@app.route('/predict_hybrid', methods=['POST'])
+def predict_hybrid():
+    """Pipeline Híbrido: YOLO NANO → OC-SORT → nohandlebars (siteswap)"""
+    video = request.files['video']
+    nballs = int(request.form.get('nballs', 4))
+    
+    video_path = os.path.join(UPLOAD_FOLDER, video.filename)
+    video.save(video_path)
+    
+    try:
+        print(f"Procesando {video.filename} con {nballs} pelotas (Hybrid pipeline)...")
+        
+        # Paso 1-2: YOLO + OC-SORT (reutilizar del DL pipeline)
+        arr, video_fps = dl_pipeline.detect_and_track(
+            video_path=video_path,
+            nballs=nballs
+        )
+        
+        # Paso 3: Guardar tracking como CSV temporal para nohandlebars
+        csv_path = os.path.join(UPLOAD_FOLDER,
+                                f"hybrid_{video.filename.replace('.mp4', '.csv')}")
+        _tracking_array_to_csv(arr, nballs, csv_path)
+        print(f"  Tracking CSV guardado: {csv_path}")
+        
+        # Paso 4: Detección de siteswap con nohandlebars
+        print("  Detectando siteswap con nohandlebars...")
+        siteswap_result = siteswap_pipeline(
+            csv_path,
+            n_balls=nballs,
+            smooth_window=9,
+            prominence=6,
+            distance=8,
+            frame_window=7,
+            use_median=True,
+            interpolate=True,
+            visualize=False
+        )
+        
+        # Limpiar
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        if os.path.exists(csv_path):
+            os.remove(csv_path)
+        
+        return jsonify({
+            'success': True,
+            'siteswap': siteswap_result['siteswap'],
+            'siteswap_canonical': siteswap_result['siteswap_canonical'],
+            'period_length': siteswap_result['period_length'],
+            'num_peaks': siteswap_result['num_peaks'],
+            'x_center': float(siteswap_result['x_center']),
+            'n_frames': int(arr.shape[0]),
+            'n_balls': nballs,
+        })
+        
+    except Exception as e:
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        csv_path_check = os.path.join(UPLOAD_FOLDER,
+                                       f"hybrid_{video.filename.replace('.mp4', '.csv')}")
+        if os.path.exists(csv_path_check):
+            os.remove(csv_path_check)
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)})
+
+
+def _tracking_array_to_csv(arr: np.ndarray, nballs: int, csv_path: str):
+    """Convierte array de tracking a CSV compatible con nohandlebars (sin header, solo x,y pares)."""
+    import csv
+    with open(csv_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        for frame_i in range(arr.shape[0]):
+            row = []
+            for b in range(nballs):
+                x = arr[frame_i, b * 2]
+                y = arr[frame_i, b * 2 + 1]
+                row.append('' if x == -1.0 else f'{x:.2f}')
+                row.append('' if y == -1.0 else f'{y:.2f}')
+            writer.writerow(row)
+
+
 @app.route('/download/<filename>')
 def download(filename):
-    """Descargar video con overlay"""
+    """Descargar archivo"""
     return send_file(os.path.join(UPLOAD_FOLDER, filename), as_attachment=True)
+
 
 if __name__ == '__main__':
     os.makedirs('uploads', exist_ok=True)

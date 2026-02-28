@@ -48,7 +48,7 @@ def interpolate_missing_detections(df):
         # Interpolación lineal
         df_interp[col] = df_interp[col].interpolate(method='linear', limit_direction='both')
         # Forward/backward fill para extremos
-        df_interp[col] = df_interp[col].fillna(method='bfill').fillna(method='ffill')
+        df_interp[col] = df_interp[col].ffill().bfill()  # ✅ fix FutureWarning
     return df_interp
 
 # ----------- Siteswap validation (from ss_sorter.py) -----------
@@ -443,6 +443,7 @@ def substring_match_metric(expected, detected, num_balls):
             'largest_pattern': '',
             'pattern_valid': False,
             'repetitions': 0,
+            'consecutive_reps': 0,      # ✅ añadir
             'pattern_avg': 0.0
         }
     
@@ -453,6 +454,7 @@ def substring_match_metric(expected, detected, num_balls):
     largest_pattern = pattern_info['pattern']
     pattern_valid = pattern_info['is_valid']
     repetitions = pattern_info['repetitions']
+    consecutive_reps = pattern_info['consecutive_reps']  # ✅ extraer
     pattern_avg = pattern_info['avg']
     
     # Verificar si el patrón más grande coincide con el esperado
@@ -490,6 +492,7 @@ def substring_match_metric(expected, detected, num_balls):
         'largest_pattern': largest_pattern,
         'pattern_valid': pattern_valid,
         'repetitions': repetitions,
+        'consecutive_reps': consecutive_reps,   # ✅ incluir en return
         'pattern_avg': pattern_avg
     }
 
@@ -638,7 +641,7 @@ def process_all_folders(base_dir='.', nballs_list=[3,4,5,6], visualize=False,
     results = {}
     
     for nballs in nballs_list:
-        folder_name = f"{nballs}b TRACK 60" #f"{nballs}b gifs TRACK 60"
+        folder_name = f"{nballs}b" #f"{nballs}b gifs TRACK 60"
         folder_path = base_path / folder_name
         
         if not folder_path.exists():
