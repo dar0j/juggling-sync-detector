@@ -4,10 +4,11 @@
     <title>Clasificador de Trucos de Malabarismo</title>
     <meta charset="utf-8">
     <link rel="icon" type="image/x-icon" href="static/img/favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             max-width: 1200px; 
             margin: 30px auto; 
             padding: 20px;
@@ -25,16 +26,44 @@
             color: #667eea;
             margin-bottom: 30px;
         }
+
+        /* Tabs */
+        .mode-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #dee2e6;
+        }
+        .mode-tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            color: #6c757d;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -3px;
+            transition: all 0.3s;
+        }
+        .mode-tab:hover { color: #667eea; }
+        .mode-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        /* Method selector */
         .method-selector {
             display: flex;
             gap: 20px;
             margin-bottom: 30px;
             justify-content: center;
+            flex-wrap: wrap;
         }
         .method-btn {
             flex: 1;
             max-width: 300px;
-            padding: 30px;
+            min-width: 200px;
+            padding: 25px;
             border: 3px solid #dee2e6;
             border-radius: 10px;
             background: white;
@@ -55,6 +84,8 @@
         .method-btn h3 { margin: 0 0 10px 0; }
         .method-btn p { margin: 5px 0; font-size: 14px; }
         .method-btn small { opacity: 0.8; }
+
+        /* Drop zone */
         #drop-zone { 
             border: 3px dashed #667eea; 
             padding: 60px 20px; 
@@ -67,10 +98,14 @@
         }
         #drop-zone:hover { background: #e9ecef; border-color: #764ba2; }
         #drop-zone.has-file { border-color: #28a745; background: #d4edda; }
+
+        /* Controls */
         .controls-shared {
             margin: 20px 0;
             display: flex;
             justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
         }
         .control-group-centered {
             display: flex;
@@ -81,6 +116,8 @@
         label { font-weight: bold; margin-bottom: 5px; color: #495057; }
         select, input[type="range"] { width: 100%; padding: 10px; border: 2px solid #dee2e6; border-radius: 5px; font-size: 16px; cursor: pointer; }
         small { color: #6c757d; font-size: 12px; margin-top: 3px; }
+
+        /* Buttons */
         .detect-btn-container { text-align: center; margin: 20px 0; display: none; }
         .detect-btn-container.show { display: block; }
         .btn-detect {
@@ -90,13 +127,32 @@
             transition: all 0.3s; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
         }
         .btn-detect:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(40, 167, 69, 0.5); }
-        .btn-detect:disabled { background: #dee2e6; cursor: not-allowed; box-shadow: none; }
+        .btn-detect:disabled { background: #dee2e6; cursor: not-allowed; box-shadow: none; transform: none; }
         .btn-reset {
             background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
             color: white; padding: 10px 25px; border: none; border-radius: 8px;
             font-size: 14px; cursor: pointer; margin-top: 15px;
         }
         .btn-reset:hover { opacity: 0.9; }
+        .btn-primary {
+            background: #667eea; color: white; padding: 12px 24px; border: none;
+            border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .btn-primary:hover { background: #764ba2; }
+        .btn-primary:disabled { background: #dee2e6; cursor: not-allowed; }
+        .btn-danger {
+            background: #dc3545; color: white; padding: 12px 24px; border: none;
+            border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .btn-danger:hover { background: #c82333; }
+        .btn-warning {
+            background: linear-gradient(135deg, #ff8c42 0%, #ff6b35 100%);
+            color: white; padding: 12px 24px; border: none;
+            border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .btn-warning:hover { opacity: 0.9; }
+
+        /* HSV Calibration */
         .hsv-calibration { display: none; margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 10px; }
         .frame-preview { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 20px; }
         .frame-preview img { width: 100%; border-radius: 5px; border: 2px solid #dee2e6; cursor: pointer; transition: all 0.3s; }
@@ -108,12 +164,8 @@
         .mask-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 15px; }
         .mask-preview div { text-align: center; }
         .mask-preview img { width: 100%; border-radius: 5px; border: 2px solid #dee2e6; }
-        .btn-primary {
-            background: #667eea; color: white; padding: 12px 24px; border: none;
-            border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer;
-        }
-        .btn-primary:hover { background: #764ba2; }
-        .btn-primary:disabled { background: #dee2e6; cursor: not-allowed; }
+
+        /* Results */
         .result { margin: 10px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea; }
         .trick-name { font-weight: bold; font-size: 18px; }
         .confidence { font-size: 16px; color: #495057; }
@@ -123,141 +175,438 @@
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .info { background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 5px; padding: 12px; margin: 10px 0; color: #0c5460; line-height: 1.6; }
+        .warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 12px; margin: 10px 0; color: #856404; line-height: 1.6; }
         .step-indicator { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
         .step { padding: 10px 20px; background: #e9ecef; border-radius: 5px; font-weight: bold; font-size: 14px; }
         .step.active { background: #667eea; color: white; }
         .step.completed { background: #28a745; color: white; }
+
+        /* Webcam / Real-time */
+        .webcam-single {
+            max-width: 720px;
+            margin: 20px auto;
+        }
+        .webcam-single video,
+        .webcam-single img {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+            display: block;
+        }
+        .webcam-single canvas { display: none; }
+
+        .realtime-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 15px auto;
+            max-width: 720px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-card .value {
+            font-family: 'Orbitron', 'JetBrains Mono', monospace;
+            font-size: 22px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        .stat-card .label {
+            font-size: 11px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Prediction display */
+        .prediction-display {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 12px;
+            margin: 15px auto;
+            max-width: 720px;
+        }
+        .prediction-display .trick {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 36px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00f5d4, #7209b7, #f72585);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            letter-spacing: 1px;
+        }
+        .prediction-display .conf {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            color: #00f5d4;
+            margin-top: 8px;
+        }
+        .prediction-display .sub {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            color: #8892b0;
+            margin-top: 4px;
+        }
+        @keyframes glow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.2); }
+        }
+
+        /* Calibration phase */
+        .rt-calibration-panel {
+            max-width: 720px;
+            margin: 15px auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        /* Section visibility */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Camera FPS badge */
+        .fps-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🎯 Clasificador de Trucos Síncronos de Malabarismo 🤹‍♂️</h1>
         
-        <!-- Selector de método -->
-        <div class="method-selector">
-            <div class="method-btn active" id="btn-dl" onclick="selectMethod('deeplearning')">
-                <h3>🧬 Deep Learning</h3>
-                <p>Clasificación automática con redes neuronales por número de pelotas en 27 trucos</p>
-                <small>YOLO + OC-SORT + TCN</small>
-            </div>
-            <div class="method-btn" id="btn-cv" onclick="selectMethod('computervision')">
-                <h3>🧿 Computer Vision</h3>
-                <p>Detección de siteswap basada en trayectorias</p>
-                <small>Requiere calibrar rango HSV</small>
-            </div>
-            <div class="method-btn" id="btn-hybrid" onclick="selectMethod('hybrid')">
-                <h3>🔀 Computer Vision + Deep Learning</h3>
-                <!-- <p>Detección YOLO + análisis de siteswap por trayectorias</p>-->
-                <small>YOLO + OC-SORT + Trayectorias</small>
-            </div>
+        <div class="mode-tabs">
+            <div class="mode-tab active" onclick="switchMode('video')">📹 Desde Video</div>
+            <div class="mode-tab" onclick="switchMode('realtime')">📷 Tiempo Real</div>
         </div>
 
-        <!-- Zona de carga de video -->
-        <div id="drop-zone">
-            <p style="font-size: 20px; color: #667eea;">📹 Arrastra un video aquí o haz clic para seleccionar</p>
-            <p style="color: #6c757d;">Formatos soportados: MP4</p>
-            <input type="file" id="video-input" accept="video/mp4" style="display:none">
-        </div>
-
-        <!-- Control compartido: Número de pelotas -->
-        <div class="controls-shared">
-            <div class="control-group-centered">
-                <label for="nballs-select">🎱 Número de pelotas:</label>
-                <select id="nballs-select">
-                    <option value="3">3 pelotas</option>
-                    <option value="4" selected>4 pelotas</option>
-                    <option value="5">5 pelotas</option>
-                    <option value="6">6 pelotas</option>
-                </select>
-                <small>Selecciona cuántas pelotas detectar</small>
-            </div>
-        </div>
-
-        <!-- Botón Detectar (solo DL) -->
-        <div class="detect-btn-container" id="detect-btn-container">
-            <button class="btn-detect" onclick="startDetection()" id="detect-btn">
-                🚀 Detectar Truco
-            </button>
-        </div>
-
-        <!-- Pipeline Computer Vision -->
-        <div id="cv-pipeline" style="display: none;">
-            <!-- Indicador de pasos -->
-            <div class="step-indicator">
-                <div class="step" id="step1">1. Calibrar Color</div>
-                <div class="step" id="step2">2. Parámetros</div>
-                <div class="step" id="step3">3. Procesar</div>
-            </div>
-
-            <div id="hsv-calibration" class="hsv-calibration">
-                <h3>🎨 Calibración de Color (HSV)</h3>
-                <p>Selecciona un frame y ajusta los sliders para aislar el color de las pelotas</p>
-                
-                <div class="frame-preview" id="frame-preview"></div>
-                
-                <div class="hsv-sliders">
-                    <div class="slider-group">
-                        <label>H min <span id="h-min-val">0</span></label>
-                        <input type="range" id="h-min" min="0" max="180" value="0" oninput="updateMask()">
-                    </div>
-                    <div class="slider-group">
-                        <label>S min <span id="s-min-val">50</span></label>
-                        <input type="range" id="s-min" min="0" max="255" value="50" oninput="updateMask()">
-                    </div>
-                    <div class="slider-group">
-                        <label>V min <span id="v-min-val">50</span></label>
-                        <input type="range" id="v-min" min="0" max="255" value="50" oninput="updateMask()">
-                    </div>
-                    <div class="slider-group">
-                        <label>H max <span id="h-max-val">180</span></label>
-                        <input type="range" id="h-max" min="0" max="180" value="180" oninput="updateMask()">
-                    </div>
-                    <div class="slider-group">
-                        <label>S max <span id="s-max-val">255</span></label>
-                        <input type="range" id="s-max" min="0" max="255" value="255" oninput="updateMask()">
-                    </div>
-                    <div class="slider-group">
-                        <label>V max <span id="v-max-val">255</span></label>
-                        <input type="range" id="v-max" min="0" max="255" value="255" oninput="updateMask()">
-                    </div>
+        <!-- ==================== VIDEO MODE ==================== -->
+        <div id="video-mode" class="section active">
+            <div class="method-selector">
+                <div class="method-btn active" id="btn-dl" onclick="selectMethod('deeplearning')">
+                    <h3>🧬 Deep Learning</h3>
+                    <p>Clasificación automática con redes neuronales</p>
+                    <small>YOLO + OC-SORT + TCN</small>
                 </div>
-
-                <div class="mask-preview" id="mask-preview">
-                    <div><h4>Original</h4><img id="preview-original" src=""></div>
-                    <div><h4>Máscara</h4><img id="preview-mask" src=""></div>
-                    <div><h4>Resultado</h4><img id="preview-result" src=""></div>
+                <div class="method-btn" id="btn-cv" onclick="selectMethod('computervision')">
+                    <h3>🧿 Computer Vision</h3>
+                    <p>Detección de siteswap basada en trayectorias</p>
+                    <small>Requiere calibrar rango HSV</small>
                 </div>
-
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn-primary" onclick="calibrateTracking()" id="calibrate-btn">
-                        ⚙️ Calibrar Parámetros de Tracking →
-                    </button>
+                <div class="method-btn" id="btn-hybrid" onclick="selectMethod('hybrid')">
+                    <h3>🔀 CV + Deep Learning</h3>
+                    <p>YOLO + análisis siteswap</p>
+                    <small>YOLO + OC-SORT + Trayectorias</small>
                 </div>
             </div>
 
-            <!-- Paso 2: Parámetros de tracking calibrados -->
-            <div id="tracking-params" style="display: none; margin: 20px 0;">
-                <h3>⚙️ Parámetros de Tracking Calibrados</h3>
-                <div class="info" id="tracking-params-info"></div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <button class="btn-primary" onclick="processComputerVision()">
-                        🔍 Detectar Siteswap →
-                    </button>
+            <div id="drop-zone">
+                <p style="font-size: 20px; color: #667eea;">📹 Arrastra un video aquí o haz clic para seleccionar</p>
+                <p style="color: #6c757d;">Formatos soportados: MP4</p>
+                <input type="file" id="video-input" accept="video/mp4" style="display:none">
+            </div>
+
+            <div class="controls-shared">
+                <div class="control-group-centered">
+                    <label for="nballs-select">🎱 Número de pelotas:</label>
+                    <select id="nballs-select">
+                        <option value="3">3 pelotas</option>
+                        <option value="4" selected>4 pelotas</option>
+                        <option value="5">5 pelotas</option>
+                        <option value="6">6 pelotas</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="detect-btn-container" id="detect-btn-container">
+                <button class="btn-detect" onclick="startDetection()" id="detect-btn">
+                    🚀 Detectar Truco
+                </button>
+            </div>
+
+            <!-- CV Pipeline -->
+            <div id="cv-pipeline" style="display: none;">
+                <div class="step-indicator">
+                    <div class="step" id="step1">1. Calibrar Color</div>
+                    <div class="step" id="step2">2. Parámetros</div>
+                    <div class="step" id="step3">3. Procesar</div>
+                </div>
+                <div id="hsv-calibration" class="hsv-calibration">
+                    <h3>🎨 Calibración de Color (HSV)</h3>
+                    <p>Selecciona un frame y ajusta los sliders para aislar el color de las pelotas</p>
+                    <div class="frame-preview" id="frame-preview"></div>
+                    <div class="hsv-sliders">
+                        <div class="slider-group"><label>H min <span id="h-min-val">0</span></label><input type="range" id="h-min" min="0" max="180" value="0" oninput="updateMask()"></div>
+                        <div class="slider-group"><label>S min <span id="s-min-val">50</span></label><input type="range" id="s-min" min="0" max="255" value="50" oninput="updateMask()"></div>
+                        <div class="slider-group"><label>V min <span id="v-min-val">50</span></label><input type="range" id="v-min" min="0" max="255" value="50" oninput="updateMask()"></div>
+                        <div class="slider-group"><label>H max <span id="h-max-val">180</span></label><input type="range" id="h-max" min="0" max="180" value="180" oninput="updateMask()"></div>
+                        <div class="slider-group"><label>S max <span id="s-max-val">255</span></label><input type="range" id="s-max" min="0" max="255" value="255" oninput="updateMask()"></div>
+                        <div class="slider-group"><label>V max <span id="v-max-val">255</span></label><input type="range" id="v-max" min="0" max="255" value="255" oninput="updateMask()"></div>
+                    </div>
+                    <div class="mask-preview">
+                        <div><h4>Original</h4><img id="preview-original" src=""></div>
+                        <div><h4>Máscara</h4><img id="preview-mask" src=""></div>
+                        <div><h4>Resultado</h4><img id="preview-result" src=""></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="btn-primary" onclick="calibrateTracking()" id="calibrate-btn">
+                            ⚙️ Calibrar Parámetros de Tracking →
+                        </button>
+                    </div>
+                </div>
+                <div id="tracking-params" style="display: none; margin: 20px 0;">
+                    <h3>⚙️ Parámetros Calibrados</h3>
+                    <div class="info" id="tracking-params-info"></div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="btn-primary" onclick="processComputerVision()">
+                            🔍 Detectar Siteswap →
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="results"></div>
+        </div>
+
+        <!-- ==================== REAL-TIME MODE ==================== -->
+        <div id="realtime-mode" class="section">
+            <div class="method-selector">
+                <div class="method-btn active" id="btn-rt-dl" onclick="selectRTMethod('deeplearning')">
+                    <h3>🧬 Deep Learning</h3>
+                    <p>YOLO + TCN por ventana</p>
+                    <small>Clasifica cada segundo</small>
+                </div>
+                <div class="method-btn" id="btn-rt-cv" onclick="selectRTMethod('computervision')">
+                    <h3>🧿 Computer Vision</h3>
+                    <p>HSV tracking + siteswap</p>
+                    <small>⚠️ Pelotas de color uniforme</small>
+                </div>
+            </div>
+
+            <!-- CV Warning -->
+            <div id="rt-cv-warning" class="warning" style="display: none;">
+                <strong>⚠️ Requisitos para Computer Vision en tiempo real:</strong><br>
+                • Pelotas de un <strong>mismo color uniforme</strong> y <strong>altamente contrastantes</strong> con el fondo<br>
+                • Se necesitan ~2-3 seg para la primera detección de siteswap<br>
+                • Primero calibrarás el color en vivo con la cámara
+            </div>
+
+            <div class="controls-shared">
+                <div class="control-group-centered">
+                    <label for="rt-nballs-select">🎱 Número de pelotas:</label>
+                    <select id="rt-nballs-select">
+                        <option value="3">3 pelotas</option>
+                        <option value="4" selected>4 pelotas</option>
+                        <option value="5">5 pelotas</option>
+                        <option value="6">6 pelotas</option>
+                    </select>
+                </div>
+                <div class="control-group-centered">
+                    <label for="rt-camera-select">📷 Cámara:</label>
+                    <select id="rt-camera-select">
+                        <option value="">Cargando cámaras...</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;" id="rt-buttons">
+                <button class="btn-detect" onclick="startRealtime()" id="rt-start-btn">
+                    📷 Iniciar Cámara
+                </button>
+                <button class="btn-danger" onclick="stopRealtime()" id="rt-stop-btn" style="display: none;">
+                    ⏹ Detener
+                </button>
+            </div>
+
+            <!-- Camera info -->
+            <div id="rt-camera-info" style="display:none; text-align:center; margin: 10px 0;">
+                <span class="fps-badge" id="camera-fps-badge">-- FPS</span>
+                <span style="color:#6c757d; font-size:13px; margin-left:10px;" id="camera-res-info"></span>
+            </div>
+
+            <!-- Single webcam panel -->
+            <div class="webcam-single" id="webcam-container" style="display: none;">
+                <video id="webcam-video" autoplay playsinline muted style="display:none;"></video>
+                <canvas id="webcam-canvas"></canvas>
+                <img id="annotated-frame" src="" alt="" style="display:none;">
+            </div>
+
+            <!-- RT CV: Calibración en vivo -->
+            <div id="rt-calibration-phase" style="display:none;">
+                <div class="rt-calibration-panel">
+                    <h3>🎨 Calibración en Vivo</h3>
+                    <p>Ajusta los sliders viendo la cámara hasta que solo las pelotas aparezcan resaltadas</p>
+                    <div class="hsv-sliders">
+                        <div class="slider-group"><label>H min <span id="rt-h-min-val">0</span></label><input type="range" id="rt-h-min" min="0" max="180" value="0" oninput="updateRTHSVLabels()"></div>
+                        <div class="slider-group"><label>S min <span id="rt-s-min-val">100</span></label><input type="range" id="rt-s-min" min="0" max="255" value="100" oninput="updateRTHSVLabels()"></div>
+                        <div class="slider-group"><label>V min <span id="rt-v-min-val">100</span></label><input type="range" id="rt-v-min" min="0" max="255" value="100" oninput="updateRTHSVLabels()"></div>
+                        <div class="slider-group"><label>H max <span id="rt-h-max-val">180</span></label><input type="range" id="rt-h-max" min="0" max="180" value="180" oninput="updateRTHSVLabels()"></div>
+                        <div class="slider-group"><label>S max <span id="rt-s-max-val">255</span></label><input type="range" id="rt-s-max" min="0" max="255" value="255" oninput="updateRTHSVLabels()"></div>
+                        <div class="slider-group"><label>V max <span id="rt-v-max-val">255</span></label><input type="range" id="rt-v-max" min="0" max="255" value="255" oninput="updateRTHSVLabels()"></div>
+                    </div>
+                    <div id="rt-calib-detections" style="text-align:center; font-size:14px; color:#6c757d;"></div>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <button class="btn-warning" onclick="confirmCalibration()">
+                            ✅ Confirmar Calibración e Iniciar Tracking
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prediction -->
+            <div class="prediction-display" id="rt-prediction" style="display: none;">
+                <div class="trick" id="rt-trick-name">---</div>
+                <div class="conf" id="rt-trick-conf"></div>
+                <div class="sub" id="rt-trick-sub"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="realtime-stats" id="rt-stats" style="display: none;">
+                <div class="stat-card">
+                    <div class="value" id="stat-fps">0</div>
+                    <div class="label">Server FPS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-cam-fps">--</div>
+                    <div class="label">Cámara FPS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-buffer">0/60</div>
+                    <div class="label">Buffer</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-detections">0</div>
+                    <div class="label">Detecciones</div>
+                </div>
+                <div class="stat-card">
+                    <div class="value" id="stat-tracks">0</div>
+                    <div class="label">Tracks</div>
                 </div>
             </div>
         </div>
-
-        <div id="results"></div>
     </div>
 
     <script>
+        // ==================== GLOBAL STATE ====================
+        let currentMode = 'video';
         let selectedMethod = 'deeplearning';
+        let rtMethod = 'deeplearning';
         let videoFilename = null;
         let selectedFrameIndex = 0;
         let calibratedParams = null;
         let uploadedFile = null;
         let maskUpdateTimeout = null;
 
+        // Real-time state
+        let rtActive = false;
+        let rtStream = null;
+        let rtInterval = null;
+        let rtProcessing = false;
+        let rtFrameCount = 0;
+        let rtLastFPSTime = Date.now();
+        let rtFPS = 0;
+        let rtPhase = 'idle'; // 'idle', 'calibrating', 'tracking'
+        let cameraFPS = 30;
+        let availableCameras = [];
+
+        // ==================== ENUMERATE CAMERAS ====================
+        async function enumerateCameras() {
+            try {
+                // Necesitamos un stream temporal para que el browser revele los labels
+                const tmpStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                tmpStream.getTracks().forEach(t => t.stop());
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                availableCameras = devices.filter(d => d.kind === 'videoinput');
+
+                const sel = document.getElementById('rt-camera-select');
+                sel.innerHTML = '';
+                availableCameras.forEach((cam, i) => {
+                    const opt = document.createElement('option');
+                    opt.value = cam.deviceId;
+                    opt.textContent = cam.label || `Cámara ${i + 1}`;
+                    sel.appendChild(opt);
+                });
+                // Seleccionar la segunda cámara si existe (USB suele ser índice 1)
+                if (availableCameras.length > 1) {
+                    sel.selectedIndex = 1;
+                }
+            } catch (err) {
+                console.warn('No se pudieron enumerar cámaras:', err);
+            }
+        }
+        enumerateCameras();
+
+        // ==================== MEASURE REAL CAMERA FPS ====================
+        function measureRealCameraFPS(video) {
+            return new Promise((resolve) => {
+                let count = 0;
+                let lastTime = null;
+                const intervals = [];
+                const target = 60; // medir 60 callbacks
+
+                function onFrame(now) {
+                    if (lastTime !== null) {
+                        intervals.push(now - lastTime);
+                    }
+                    lastTime = now;
+                    count++;
+                    if (count >= target) {
+                        // Calcular FPS real desde intervalos
+                        if (intervals.length > 5) {
+                            // Quitar outliers (primer frame suele ser lento)
+                            intervals.sort((a, b) => a - b);
+                            const trimmed = intervals.slice(2, -2);
+                            const avgMs = trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
+                            resolve(Math.round(1000 / avgMs));
+                        } else {
+                            resolve(30);
+                        }
+                    } else {
+                        video.requestVideoFrameCallback(onFrame);
+                    }
+                }
+
+                // Usar requestVideoFrameCallback si disponible (mide FPS real del stream)
+                if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
+                    video.requestVideoFrameCallback(onFrame);
+                } else {
+                    // Fallback: usar settings del track
+                    const track = video.srcObject?.getVideoTracks()[0];
+                    const fps = track?.getSettings()?.frameRate || 30;
+                    resolve(Math.round(fps));
+                }
+            });
+        }
+
+        // ==================== MODE SWITCHING ====================
+        function switchMode(mode) {
+            // Bloquear cambio si real-time está activo
+            if (rtActive && mode === 'video') {
+                alert('Detén la sesión de tiempo real antes de cambiar de modo.');
+                return;
+            }
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('video-mode').classList.toggle('active', mode === 'video');
+            document.getElementById('realtime-mode').classList.toggle('active', mode === 'realtime');
+        }
+
+        // ==================== VIDEO MODE ====================
         const dropZone = document.getElementById('drop-zone');
         const input = document.getElementById('video-input');
         const nballsSelect = document.getElementById('nballs-select');
@@ -268,414 +617,384 @@
             document.getElementById('btn-cv').classList.toggle('active', method === 'computervision');
             document.getElementById('btn-hybrid').classList.toggle('active', method === 'hybrid');
             document.getElementById('cv-pipeline').style.display = method === 'computervision' ? 'block' : 'none';
-            
             updateDetectButton();
-            
-            if (method !== 'computervision') {
-                resetCVState();
-            }
+            if (method !== 'computervision') resetCVState();
         }
 
         function updateDetectButton() {
             const container = document.getElementById('detect-btn-container');
-            if ((selectedMethod === 'deeplearning' || selectedMethod === 'hybrid') && uploadedFile) {
-                container.classList.add('show');
-            } else {
-                container.classList.remove('show');
-            }
+            container.classList.toggle('show', (selectedMethod === 'deeplearning' || selectedMethod === 'hybrid') && !!uploadedFile);
         }
 
         function resetCVState() {
             document.getElementById('hsv-calibration').style.display = 'none';
             document.getElementById('tracking-params').style.display = 'none';
-            ['step1', 'step2', 'step3'].forEach(id => {
-                const el = document.getElementById(id);
-                el.classList.remove('active', 'completed');
-            });
+            ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('active','completed'));
             calibratedParams = null;
         }
 
         function resetAll() {
-            uploadedFile = null;
-            videoFilename = null;
-            calibratedParams = null;
+            uploadedFile = null; videoFilename = null; calibratedParams = null;
             dropZone.classList.remove('has-file');
             dropZone.innerHTML = `
                 <p style="font-size: 20px; color: #667eea;">📹 Arrastra un video aquí o haz clic para seleccionar</p>
                 <p style="color: #6c757d;">Formatos soportados: MP4</p>
-                <input type="file" id="video-input" accept="video/mp4" style="display:none">
-            `;
+                <input type="file" id="video-input" accept="video/mp4" style="display:none">`;
             document.getElementById('video-input').onchange = handleVideoUpload;
             document.getElementById('results').innerHTML = '';
-            updateDetectButton();
-            resetCVState();
+            updateDetectButton(); resetCVState();
         }
 
         dropZone.onclick = () => input.click();
         input.onchange = handleVideoUpload;
         dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#764ba2'; };
         dropZone.ondragleave = () => { dropZone.style.borderColor = '#667eea'; };
-        dropZone.ondrop = (e) => {
-            e.preventDefault();
-            dropZone.style.borderColor = '#667eea';
-            input.files = e.dataTransfer.files;
-            handleVideoUpload();
-        };
+        dropZone.ondrop = (e) => { e.preventDefault(); dropZone.style.borderColor = '#667eea'; input.files = e.dataTransfer.files; handleVideoUpload(); };
 
         function handleVideoUpload() {
-            const file = input.files[0];
-            if (!file) return;
+            const file = input.files[0]; if (!file) return;
             uploadedFile = file;
-            
             dropZone.classList.add('has-file');
             dropZone.innerHTML = `
                 <p style="font-size: 18px; color: #28a745;">✅ ${file.name}</p>
-                <p style="color: #6c757d;">${(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                <p style="color: #6c757d;">${(file.size/1024/1024).toFixed(1)} MB</p>
                 <button class="btn-reset" onclick="event.stopPropagation(); resetAll();">↻ Cambiar video</button>
-                <input type="file" id="video-input" accept="video/mp4" style="display:none">
-            `;
+                <input type="file" id="video-input" accept="video/mp4" style="display:none">`;
             document.getElementById('video-input').onchange = handleVideoUpload;
-
-            if (selectedMethod === 'computervision') {
-                extractFramesCV(file);
-            } else {
-                // deeplearning y hybrid: solo mostrar botón
-                updateDetectButton();
-            }
+            if (selectedMethod === 'computervision') extractFramesCV(file);
+            else updateDetectButton();
         }
 
         function startDetection() {
-            if (selectedMethod === 'deeplearning') {
-                uploadVideoDL();
-            } else if (selectedMethod === 'hybrid') {
-                uploadVideoHybrid();
-            }
+            if (selectedMethod === 'deeplearning') uploadVideoDL();
+            else if (selectedMethod === 'hybrid') uploadVideoHybrid();
         }
 
-        // ==================== DEEP LEARNING ====================
         function uploadVideoDL() {
             if (!uploadedFile) return;
-            const btn = document.getElementById('detect-btn');
-            btn.disabled = true;
-
+            const btn = document.getElementById('detect-btn'); btn.disabled = true;
             const formData = new FormData();
-            formData.append('video', uploadedFile);
-            formData.append('nballs', nballsSelect.value);
-            
-            document.getElementById('results').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <h3>Procesando ${uploadedFile.name}...</h3>
-                    <p>🎱 ${nballsSelect.value} pelotas | YOLO NANO → OC-SORT → TCN</p>
-                    <p style="color: #6c757d;">Detectando, trackeando y clasificando...</p>
-                </div>
-            `;
-            
-            fetch('/predict', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
+            formData.append('video', uploadedFile); formData.append('nballs', nballsSelect.value);
+            document.getElementById('results').innerHTML = `<div class="loading"><div class="spinner"></div><h3>Procesando...</h3><p>🎱 ${nballsSelect.value} pelotas | YOLO → OC-SORT → TCN</p></div>`;
+            fetch('/predict', { method: 'POST', body: formData }).then(r => r.json()).then(data => {
                 btn.disabled = false;
                 if (data.success) {
                     let html = '<h2>🎉 Resultados (Deep Learning)</h2>';
-                    html += `<div class="info">
-                        📊 Frames: ${data.n_frames} | 🎱 Pelotas: ${data.n_balls}
-                    </div>`;
-                    
-                    data.predictions.forEach((p, i) => {
-                        const name = p[0];
-                        const pct = (p[1] * 100).toFixed(1);
-                        html += `<div class="result">
-                            <div style="display: flex; justify-content: space-between;">
-                                <span class="trick-name">${i+1}. ${name}</span>
-                                <span class="confidence">${pct}%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${pct}%"></div>
-                            </div>
-                        </div>`;
-                    });
+                    html += `<div class="info">📊 Frames: ${data.n_frames} | 🎱 Pelotas: ${data.n_balls}</div>`;
+                    data.predictions.forEach((p, i) => { const pct = (p[1]*100).toFixed(1);
+                        html += `<div class="result"><div style="display:flex;justify-content:space-between;"><span class="trick-name">${i+1}. ${p[0]}</span><span class="confidence">${pct}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>`; });
                     document.getElementById('results').innerHTML = html;
-                } else {
-                    document.getElementById('results').innerHTML = `
-                        <div class="result" style="border-left-color: #dc3545;">
-                            ❌ Error: ${data.error}
-                        </div>`;
-                }
-            })
-            .catch(err => {
-                btn.disabled = false;
-                document.getElementById('results').innerHTML = `
-                    <div class="result" style="border-left-color: #dc3545;">
-                        ❌ Error de conexión: ${err.message}
-                    </div>`;
-            });
+                } else document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${data.error}</div>`;
+            }).catch(err => { btn.disabled = false; document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${err.message}</div>`; });
         }
 
-        // ==================== HYBRID (CV + DL) ====================
         function uploadVideoHybrid() {
             if (!uploadedFile) return;
-            const btn = document.getElementById('detect-btn');
-            btn.disabled = true;
-
+            const btn = document.getElementById('detect-btn'); btn.disabled = true;
             const formData = new FormData();
-            formData.append('video', uploadedFile);
-            formData.append('nballs', nballsSelect.value);
-            
-            document.getElementById('results').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <h3>Procesando ${uploadedFile.name}...</h3>
-                    <p>🎱 ${nballsSelect.value} pelotas | YOLO NANO → OC-SORT → Siteswap</p>
-                    <p style="color: #6c757d;">Detectando pelotas con DL, analizando trayectorias con CV...</p>
-                </div>
-            `;
-            
-            fetch('/predict_hybrid', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
+            formData.append('video', uploadedFile); formData.append('nballs', nballsSelect.value);
+            document.getElementById('results').innerHTML = `<div class="loading"><div class="spinner"></div><h3>Procesando (Hybrid)...</h3><p>YOLO → OC-SORT → Siteswap</p></div>`;
+            fetch('/predict_hybrid', { method: 'POST', body: formData }).then(r => r.json()).then(data => {
                 btn.disabled = false;
                 if (data.success) {
-                    document.getElementById('results').innerHTML = `
-                        <h2>🎉 Detección Completada (CV + Deep Learning)</h2>
-                        <div class="info">
-                            📊 Frames: ${data.n_frames} | 🎱 Pelotas: ${data.n_balls}
-                        </div>
-                        <div class="result">
-                            <div class="trick-name" style="font-size: 24px; margin-bottom: 10px;">
-                                Siteswap: ${data.siteswap_canonical || data.siteswap || 'No detectado'}
-                            </div>
-                        </div>
-                        <div class="info">
-                            <strong>Secuencia completa:</strong> ${data.siteswap}<br>
-                            <strong>Periodo canónico:</strong> ${data.siteswap_canonical}<br>
-                            <strong>Longitud periodo:</strong> ${data.period_length}<br>
-                            <strong>Picos detectados:</strong> ${data.num_peaks}<br>
-                            <strong>Centro X:</strong> ${data.x_center.toFixed(1)} px
-                        </div>
-                    `;
-                } else {
-                    document.getElementById('results').innerHTML = `
-                        <div class="result" style="border-left-color: #dc3545;">
-                            ❌ Error: ${data.error}
-                        </div>`;
-                }
-            })
-            .catch(err => {
-                btn.disabled = false;
-                document.getElementById('results').innerHTML = `
-                    <div class="result" style="border-left-color: #dc3545;">
-                        ❌ Error de conexión: ${err.message}
-                    </div>`;
-            });
+                    document.getElementById('results').innerHTML = `<h2>🎉 Resultado (Hybrid)</h2>
+                        <div class="result"><div class="trick-name" style="font-size:24px;">Siteswap: ${data.siteswap_canonical || data.siteswap || 'No detectado'}</div></div>
+                        <div class="info"><strong>Secuencia:</strong> ${data.siteswap}<br><strong>Canónico:</strong> ${data.siteswap_canonical}<br><strong>Periodo:</strong> ${data.period_length}<br><strong>Picos:</strong> ${data.num_peaks}</div>`;
+                } else document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${data.error}</div>`;
+            }).catch(err => { btn.disabled = false; document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${err.message}</div>`; });
         }
 
-        // ==================== COMPUTER VISION ====================
         function extractFramesCV(file) {
-            const formData = new FormData();
-            formData.append('video', file);
-
-            document.getElementById('results').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <h3>Extrayendo frames...</h3>
-                </div>`;
-
-            fetch('/extract_frames', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
+            const formData = new FormData(); formData.append('video', file);
+            document.getElementById('results').innerHTML = `<div class="loading"><div class="spinner"></div><h3>Extrayendo frames...</h3></div>`;
+            fetch('/extract_frames', { method: 'POST', body: formData }).then(r => r.json()).then(data => {
                 document.getElementById('results').innerHTML = '';
-                if (data.success) {
-                    videoFilename = data.video_path;
-                    displayFrames(data.frames);
-                    document.getElementById('step1').classList.add('active');
-                    document.getElementById('hsv-calibration').style.display = 'block';
-                } else {
-                    document.getElementById('results').innerHTML = `
-                        <div class="result" style="border-left-color: #dc3545;">
-                            ❌ ${data.error}
-                        </div>`;
-                }
-            })
-            .catch(err => {
-                document.getElementById('results').innerHTML = `
-                    <div class="result" style="border-left-color: #dc3545;">
-                        ❌ ${err.message}
-                    </div>`;
-            });
+                if (data.success) { videoFilename = data.video_path; displayFrames(data.frames); document.getElementById('step1').classList.add('active'); document.getElementById('hsv-calibration').style.display = 'block'; }
+                else document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${data.error}</div>`;
+            }).catch(err => document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${err.message}</div>`);
         }
 
         function displayFrames(frames) {
-            const preview = document.getElementById('frame-preview');
-            preview.innerHTML = '';
-            frames.forEach((frame, index) => {
-                const img = document.createElement('img');
-                img.src = frame;
-                img.onclick = () => selectFrame(index);
-                if (index === 0) img.classList.add('selected');
-                preview.appendChild(img);
-            });
-
-            // Mostrar preview del primer frame
+            const preview = document.getElementById('frame-preview'); preview.innerHTML = '';
+            frames.forEach((frame, i) => { const img = document.createElement('img'); img.src = frame; img.onclick = () => selectFrame(i); if (i===0) img.classList.add('selected'); preview.appendChild(img); });
             updateMask();
         }
-
-        function selectFrame(index) {
-            selectedFrameIndex = index;
-            document.querySelectorAll('.frame-preview img').forEach((img, i) => {
-                img.classList.toggle('selected', i === index);
-            });
-            updateMask();
-        }
+        function selectFrame(i) { selectedFrameIndex = i; document.querySelectorAll('.frame-preview img').forEach((img,j) => img.classList.toggle('selected', j===i)); updateMask(); }
 
         function updateMask() {
             if (!videoFilename) return;
-            
-            // Debounce para no saturar el servidor
             clearTimeout(maskUpdateTimeout);
             maskUpdateTimeout = setTimeout(() => {
-                const vals = getHSVValues();
-                
-                // Actualizar labels
-                document.getElementById('h-min-val').textContent = vals[0];
-                document.getElementById('s-min-val').textContent = vals[1];
-                document.getElementById('v-min-val').textContent = vals[2];
-                document.getElementById('h-max-val').textContent = vals[3];
-                document.getElementById('s-max-val').textContent = vals[4];
-                document.getElementById('v-max-val').textContent = vals[5];
-
-                fetch('/preview_mask', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        video_path: videoFilename,
-                        hsv_range: vals,
-                        frame_index: selectedFrameIndex
-                    })
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('preview-original').src = data.original;
-                        document.getElementById('preview-mask').src = data.mask;
-                        document.getElementById('preview-result').src = data.result;
-                    }
-                });
-            }, 150); <!-- 300 -->
+                const v = getHSVValues();
+                ['h-min','s-min','v-min','h-max','s-max','v-max'].forEach((id,i) => document.getElementById(id+'-val').textContent = v[i]);
+                fetch('/preview_mask', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ video_path: videoFilename, hsv_range: v, frame_index: selectedFrameIndex }) })
+                .then(r => r.json()).then(data => { if (data.success) { document.getElementById('preview-original').src = data.original; document.getElementById('preview-mask').src = data.mask; document.getElementById('preview-result').src = data.result; } });
+            }, 150);
         }
-
-        function getHSVValues() {
-            return [
-                parseInt(document.getElementById('h-min').value),
-                parseInt(document.getElementById('s-min').value),
-                parseInt(document.getElementById('v-min').value),
-                parseInt(document.getElementById('h-max').value),
-                parseInt(document.getElementById('s-max').value),
-                parseInt(document.getElementById('v-max').value),
-            ];
-        }
+        function getHSVValues() { return ['h-min','s-min','v-min','h-max','s-max','v-max'].map(id => parseInt(document.getElementById(id).value)); }
 
         function calibrateTracking() {
-            const btn = document.getElementById('calibrate-btn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Calibrando...';
-
-            fetch('/calibrate_tracking', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    video_path: videoFilename,
-                    hsv_range: getHSVValues()
-                })
-            })
-            .then(r => r.json())
-            .then(data => {
-                btn.disabled = false;
-                btn.textContent = '⚙️ Calibrar Parámetros de Tracking →';
-
+            const btn = document.getElementById('calibrate-btn'); btn.disabled = true; btn.textContent = '⏳ Calibrando...';
+            fetch('/calibrate_tracking', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ video_path: videoFilename, hsv_range: getHSVValues() }) })
+            .then(r => r.json()).then(data => {
+                btn.disabled = false; btn.textContent = '⚙️ Calibrar Parámetros de Tracking →';
                 if (data.success) {
-                    calibratedParams = {
-                        hsv_range: getHSVValues(),
-                        ...data.params
-                    };
-
-                    document.getElementById('tracking-params-info').innerHTML = `
-                        <strong>✅ Parámetros calibrados:</strong><br>
-                        • Área mínima: ${data.params.min_area} px²<br>
-                        • Costo máximo (Hungarian): ${data.params.max_cost} px<br>
-                        • Diámetro pelota: ${data.stats.ball_diameter_mean.toFixed(1)} px<br>
-                        • Velocidad: ${data.stats.motion_velocity_mean.toFixed(1)} px/frame
-                    `;
-
-                    document.getElementById('step1').classList.replace('active', 'completed');
-                    document.getElementById('step2').classList.add('active');
-                    document.getElementById('tracking-params').style.display = 'block';
-                } else {
-                    alert('Error: ' + data.error);
-                }
-            })
-            .catch(err => {
-                btn.disabled = false;
-                btn.textContent = '⚙️ Calibrar Parámetros de Tracking →';
-                alert('Error: ' + err.message);
-            });
+                    calibratedParams = { hsv_range: getHSVValues(), ...data.params };
+                    document.getElementById('tracking-params-info').innerHTML = `<strong>✅ Calibrado:</strong><br>• Área min: ${data.params.min_area} px² • Max cost: ${data.params.max_cost} px<br>• Diámetro: ${data.stats.ball_diameter_mean.toFixed(1)} px • Velocidad: ${data.stats.motion_velocity_mean.toFixed(1)} px/f`;
+                    document.getElementById('step1').classList.replace('active','completed'); document.getElementById('step2').classList.add('active'); document.getElementById('tracking-params').style.display = 'block';
+                } else alert('Error: ' + data.error);
+            }).catch(err => { btn.disabled = false; btn.textContent = '⚙️ Calibrar Parámetros de Tracking →'; alert(err.message); });
         }
 
         function processComputerVision() {
-            document.getElementById('step2').classList.replace('active', 'completed');
-            document.getElementById('step3').classList.add('active');
+            document.getElementById('step2').classList.replace('active','completed'); document.getElementById('step3').classList.add('active');
+            document.getElementById('results').innerHTML = `<div class="loading"><div class="spinner"></div><h3>Procesando con CV...</h3></div>`;
+            fetch('/process_computervision', { method: 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ video_path: videoFilename, nballs: parseInt(nballsSelect.value), hsv_range: calibratedParams.hsv_range, tracking_params: { min_area: calibratedParams.min_area, max_cost: calibratedParams.max_cost } }) })
+            .then(r => r.json()).then(data => {
+                if (data.success) { document.getElementById('step3').classList.replace('active','completed');
+                    document.getElementById('results').innerHTML = `<h2>🎉 Detección (CV)</h2><div class="result"><div class="trick-name" style="font-size:24px;">${data.siteswap_canonical||data.siteswap||'No detectado'}</div></div><div class="info"><strong>Secuencia:</strong> ${data.siteswap}<br><strong>Canónico:</strong> ${data.siteswap_canonical}<br><strong>Periodo:</strong> ${data.period_length}<br><strong>Picos:</strong> ${data.num_peaks}</div>`;
+                } else document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${data.error}</div>`;
+            }).catch(err => document.getElementById('results').innerHTML = `<div class="result" style="border-left-color:#dc3545;">❌ ${err.message}</div>`);
+        }
 
-            document.getElementById('results').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <h3>Procesando con Computer Vision...</h3>
-                    <p>Tracking + Detección de siteswap</p>
-                </div>`;
+        // ==================== REAL-TIME ====================
+        function selectRTMethod(method) {
+            if (rtActive) {
+                alert('Detén la sesión actual antes de cambiar de método.');
+                return;
+            }
+            rtMethod = method;
+            document.getElementById('btn-rt-dl').classList.toggle('active', method === 'deeplearning');
+            document.getElementById('btn-rt-cv').classList.toggle('active', method === 'computervision');
+            document.getElementById('rt-cv-warning').style.display = method === 'computervision' ? 'block' : 'none';
+        }
 
-            fetch('/process_computervision', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    video_path: videoFilename,
-                    nballs: parseInt(nballsSelect.value),
-                    hsv_range: calibratedParams.hsv_range,
-                    tracking_params: {
-                        min_area: calibratedParams.min_area,
-                        max_cost: calibratedParams.max_cost
-                    }
-                })
+        function updateRTHSVLabels() {
+            ['rt-h-min','rt-s-min','rt-v-min','rt-h-max','rt-s-max','rt-v-max'].forEach(id =>
+                document.getElementById(id + '-val').textContent = document.getElementById(id).value);
+        }
+
+        function getRTHSVValues() {
+            return ['rt-h-min','rt-s-min','rt-v-min','rt-h-max','rt-s-max','rt-v-max'].map(id => parseInt(document.getElementById(id).value));
+        }
+
+        async function startRealtime() {
+            const nballs = parseInt(document.getElementById('rt-nballs-select').value);
+            const selectedCameraId = document.getElementById('rt-camera-select').value;
+
+            const videoConstraints = {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+            };
+            if (selectedCameraId) {
+                videoConstraints.deviceId = { exact: selectedCameraId };
+            }
+
+            try {
+                rtStream = await navigator.mediaDevices.getUserMedia({
+                    video: videoConstraints
+                });
+            } catch (err) {
+                alert('No se pudo acceder a la cámara: ' + err.message);
+                return;
+            }
+
+            const video = document.getElementById('webcam-video');
+            video.srcObject = rtStream;
+            video.style.display = 'none';
+
+            rtActive = true;
+            document.getElementById('rt-start-btn').style.display = 'none';
+            document.getElementById('rt-stop-btn').style.display = 'inline-block';
+            document.getElementById('webcam-container').style.display = 'block';
+            document.getElementById('rt-camera-info').style.display = 'block';
+
+            // Wait for video to be ready
+            await new Promise(r => { video.onloadedmetadata = r; });
+            await video.play();
+
+            const canvas = document.getElementById('webcam-canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.style.display = 'block';
+            document.getElementById('annotated-frame').style.display = 'none';
+
+            // Measure REAL camera FPS using requestVideoFrameCallback
+            console.log('Midiendo FPS real de la cámara...');
+            cameraFPS = await measureRealCameraFPS(video);
+            console.log(`FPS real medido: ${cameraFPS}`);
+
+            document.getElementById('camera-fps-badge').textContent = `${cameraFPS} FPS`;
+            document.getElementById('camera-res-info').textContent = `${video.videoWidth}×${video.videoHeight}`;
+
+            if (rtMethod === 'computervision') {
+                rtPhase = 'calibrating';
+                document.getElementById('rt-calibration-phase').style.display = 'block';
+                document.getElementById('rt-prediction').style.display = 'none';
+                document.getElementById('rt-stats').style.display = 'none';
+                rtInterval = setInterval(sendCalibrationFrame, 250);
+            } else {
+                rtPhase = 'tracking';
+                await startTrackingSession(nballs);
+            }
+        }
+
+        function sendCalibrationFrame() {
+            if (!rtActive || rtProcessing) return;
+            rtProcessing = true;
+
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('webcam-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frameData = canvas.toDataURL('image/jpeg', 0.7);
+
+            fetch('/realtime/calibrate_frame', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ frame: frameData, hsv_range: getRTHSVValues(), min_area: 100 })
             })
             .then(r => r.json())
             .then(data => {
-                if (data.success) {
-                    document.getElementById('step3').classList.replace('active', 'completed');
-                    document.getElementById('results').innerHTML = `
-                        <h2>🎉 Detección Completada (Computer Vision)</h2>
-                        <div class="result">
-                            <div class="trick-name" style="font-size: 24px; margin-bottom: 10px;">
-                                ${data.siteswap_canonical || data.siteswap || 'No detectado'}
-                            </div>
-                        </div>
-                        <div class="info">
-                            <strong>Secuencia completa:</strong> ${data.siteswap}<br>
-                            <strong>Periodo canónico:</strong> ${data.siteswap_canonical}<br>
-                            <strong>Longitud periodo:</strong> ${data.period_length}<br>
-                            <strong>Picos detectados:</strong> ${data.num_peaks}<br>
-                            <strong>Centro X:</strong> ${data.x_center.toFixed(1)} px
-                        </div>
-                    `;
+                rtProcessing = false;
+                if (!data.success) return;
+                const img = new Image();
+                img.onload = () => {
+                    const ctx2 = canvas.getContext('2d');
+                    ctx2.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = data.annotated_frame;
+                document.getElementById('rt-calib-detections').textContent =
+                    `${data.n_detections} objeto(s) detectado(s)`;
+            })
+            .catch(() => { rtProcessing = false; });
+        }
+
+        async function confirmCalibration() {
+            if (rtInterval) { clearInterval(rtInterval); rtInterval = null; }
+            rtPhase = 'tracking';
+            document.getElementById('rt-calibration-phase').style.display = 'none';
+            const nballs = parseInt(document.getElementById('rt-nballs-select').value);
+            await startTrackingSession(nballs);
+        }
+
+        async function startTrackingSession(nballs) {
+            const payload = {
+                mode: rtMethod,
+                nballs: nballs,
+                camera_fps: cameraFPS,
+            };
+            if (rtMethod === 'computervision') {
+                payload.hsv_range = getRTHSVValues();
+                payload.min_area = 100;
+            }
+
+            const res = await fetch('/realtime/start', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if (!data.success) { alert('Error: ' + data.error); stopRealtime(); return; }
+
+            // Switch to annotated view
+            document.getElementById('webcam-canvas').style.display = 'none';
+            document.getElementById('annotated-frame').style.display = 'block';
+
+            document.getElementById('rt-prediction').style.display = 'block';
+            document.getElementById('rt-stats').style.display = 'grid';
+            document.getElementById('stat-cam-fps').textContent = cameraFPS;
+
+            rtFrameCount = 0; rtLastFPSTime = Date.now();
+
+            // Send interval: apuntar a ~5-8 fps al server
+            const sendMs = Math.max(120, Math.round(1000 / Math.min(8, cameraFPS / 4)));
+            console.log(`Enviando frames cada ${sendMs}ms (~${Math.round(1000/sendMs)} fps al server)`);
+            rtInterval = setInterval(sendTrackingFrame, sendMs);
+        }
+
+        function sendTrackingFrame() {
+            if (!rtActive || rtProcessing) return;
+            rtProcessing = true;
+
+            const video = document.getElementById('webcam-video');
+            const canvas = document.getElementById('webcam-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const frameData = canvas.toDataURL('image/jpeg', 0.7);
+
+            fetch('/realtime/frame', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ frame: frameData })
+            })
+            .then(r => r.json())
+            .then(data => {
+                rtProcessing = false;
+                if (!data.success) return;
+
+                if (data.annotated_frame) {
+                    document.getElementById('annotated-frame').src = data.annotated_frame;
+                }
+
+                // FPS counter (mide roundtrips exitosos por segundo)
+                rtFrameCount++;
+                const now = Date.now();
+                if (now - rtLastFPSTime >= 1000) {
+                    rtFPS = rtFrameCount;
+                    rtFrameCount = 0;
+                    rtLastFPSTime = now;
+                }
+                document.getElementById('stat-fps').textContent = rtFPS;
+                const seqLen = data.seq_len || data.min_frames || 60;
+                document.getElementById('stat-buffer').textContent = `${data.buffer_size}/${seqLen}`;
+                document.getElementById('stat-detections').textContent = data.n_detections || 0;
+                document.getElementById('stat-tracks').textContent = data.n_tracks || 0;
+
+                // Prediction
+                const pred = data.smoothed_prediction || data.prediction || data.siteswap;
+                if (pred) {
+                    if (pred.trick) {
+                        document.getElementById('rt-trick-name').textContent = pred.trick;
+                        document.getElementById('rt-trick-conf').textContent = `${(pred.confidence * 100).toFixed(0)}%`;
+                        document.getElementById('rt-trick-sub').textContent =
+                            pred.n_windows ? `promedio de ${pred.n_windows} ventanas` : 'ventana actual';
+                    } else if (pred.canonical || pred.siteswap) {
+                        document.getElementById('rt-trick-name').textContent = pred.canonical || pred.siteswap;
+                        document.getElementById('rt-trick-conf').textContent = 'vía trayectorias';
+                        document.getElementById('rt-trick-sub').textContent = '';
+                    }
                 } else {
-                    document.getElementById('results').innerHTML = `
-                        <div class="result" style="border-left-color: #dc3545;">
-                            ❌ Error: ${data.error}
-                        </div>`;
+                    if (data.buffer_size < seqLen) {
+                        const pct = Math.round(data.buffer_size / seqLen * 100);
+                        document.getElementById('rt-trick-name').textContent = `Acumulando… ${pct}%`;
+                        document.getElementById('rt-trick-conf').textContent = '';
+                        document.getElementById('rt-trick-sub').textContent = `${data.buffer_size}/${seqLen} frames`;
+                    } else {
+                        document.getElementById('rt-trick-name').textContent = '---';
+                        document.getElementById('rt-trick-conf').textContent = '';
+                        document.getElementById('rt-trick-sub').textContent = '';
+                    }
                 }
             })
-            .catch(err => {
-                document.getElementById('results').innerHTML = `
-                    <div class="result" style="border-left-color: #dc3545;">
-                        ❌ Error: ${err.message}
-                    </div>`;
-            });
+            .catch(() => { rtProcessing = false; });
+        }
+
+        async function stopRealtime() {
+            rtActive = false;
+            rtPhase = 'idle';
+            if (rtInterval) { clearInterval(rtInterval); rtInterval = null; }
+            if (rtStream) { rtStream.getTracks().forEach(t => t.stop()); rtStream = null; }
+
+            await fetch('/realtime/stop', { method: 'POST' }).catch(() => {});
+
+            document.getElementById('rt-start-btn').style.display = 'inline-block';
+            document.getElementById('rt-stop-btn').style.display = 'none';
+            document.getElementById('webcam-container').style.display = 'none';
+            document.getElementById('rt-prediction').style.display = 'none';
+            document.getElementById('rt-stats').style.display = 'none';
+            document.getElementById('rt-camera-info').style.display = 'none';
+            document.getElementById('rt-calibration-phase').style.display = 'none';
+            document.getElementById('rt-trick-name').textContent = '---';
+            document.getElementById('rt-trick-conf').textContent = '';
+            document.getElementById('rt-trick-sub').textContent = '';
         }
     </script>
 </body>

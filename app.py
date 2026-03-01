@@ -1,5 +1,5 @@
 # app.py - YOLO NANO + OC-SORT + TCN per-nballs + Computer Vision Pipeline
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, render_template, send_file, Response
 import os
 import cv2
 import numpy as np
@@ -18,6 +18,9 @@ from nohandlebars import pipeline as siteswap_pipeline
 # Importar nuevo pipeline DL
 from pipeline_dl import DLPipeline
 
+# Importar pipelines de tiempo real
+from pipeline_realtime import RealtimeDLPipeline, RealtimeCVPipeline, SEQ_LEN
+
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -32,6 +35,27 @@ dl_pipeline = DLPipeline(
 print("✓ Pipeline DL listo")
 # =========================================================================
 
+# ============ Pipelines de tiempo real ============
+print("Inicializando pipelines de tiempo real...")
+realtime_dl = RealtimeDLPipeline(
+    yolo_model_path="MODELS/NANO.pt",
+    models_dir="MODELS/WINDOW",
+    confidence_threshold=0.3
+)
+realtime_cv = RealtimeCVPipeline()
+print("✓ Pipelines de tiempo real listos")
+
+# Estado global de streaming (simplificado para un usuario)
+_stream_state = {
+    "active": False,
+    "mode": None,     # 'deeplearning', 'computervision'
+    "nballs": 4,
+    "hsv_range": None,
+    "min_area": 100,
+    "camera_fps": 30,   # FPS real de la cámara
+    "calibrating": False,  # True durante calibración HSV en vivo
+}
+# ==================================================
 
 def frame_to_base64(frame):
     """Convierte frame de OpenCV a base64 para enviar al frontend"""
@@ -361,8 +385,201 @@ def download(filename):
     return send_file(os.path.join(UPLOAD_FOLDER, filename), as_attachment=True)
 
 
+@app.route('/realtime/calibrate_frame', methods=['POST'])
+def realtime_calibrate_frame():
+    """
+    Recibe un frame de la cámara durante calibración HSV.
+    Aplica la máscara y retorna el frame anotado con detecciones.
+    """
+    data = request.get_json()
+    img_b64 = data['frame']
+    hsv_range = tuple(data['hsv_range'])  # [h_min, s_min, v_min, h_max, s_max, v_max]
+    min_area = int(data.get('min_area', 100))
+
+    try:
+        header, encoded = img_b64.split(',', 1)
+        img_bytes = base64.b64decode(encoded)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+    if frame is None:
+        return jsonify({"success": False, "error": "Frame inválido"})
+
+    h, w = frame.shape[:2]
+    h_min, s_min, v_min, h_max, s_max, v_max = hsv_range
+
+    # Aplicar HSV mask
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, np.array([h_min, s_min, v_min]),
+                             np.array([h_max, s_max, v_max]))
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+
+    # Detectar contornos
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    n_detections = 0
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area < min_area or area > 5000:
+            continue
+        M = cv2.moments(cnt)
+        if M['m00'] > 0:
+            cx = int(M['m10'] / M['m00'])
+            cy = int(M['m01'] / M['m00'])
+            r = int(np.sqrt(area / np.pi))
+            cv2.circle(frame, (cx, cy), r, (0, 255, 0), 2)
+            cv2.circle(frame, (cx, cy), 3, (0, 0, 255), -1)
+            n_detections += 1
+
+    # Overlay de máscara semitransparente
+    mask_color = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+    mask_color[:, :, 0] = 0  # solo green channel
+    mask_color[:, :, 2] = 0
+    frame = cv2.addWeighted(frame, 0.7, mask_color, 0.3, 0)
+
+    # Texto de detecciones
+    cv2.putText(frame, f"{n_detections} detecciones", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+    return jsonify({
+        "success": True,
+        "annotated_frame": frame_to_base64(frame),
+        "n_detections": n_detections,
+    })
+
+
+@app.route('/realtime/start', methods=['POST'])
+def realtime_start():
+    """Inicializa sesión de tiempo real."""
+    data = request.get_json()
+    mode = data['mode']
+    nballs = int(data['nballs'])
+    camera_fps = float(data.get('camera_fps', 30))
+
+    _stream_state["active"] = True
+    _stream_state["mode"] = mode
+    _stream_state["nballs"] = nballs
+    _stream_state["camera_fps"] = camera_fps
+    _stream_state["calibrating"] = False
+
+    try:
+        if mode == 'deeplearning':
+            realtime_dl.initialize(nballs)
+            return jsonify({"success": True,
+                            "message": f"DL real-time iniciado ({nballs}b)",
+                            "seq_len": SEQ_LEN,
+                            "camera_fps": camera_fps})
+        elif mode == 'computervision':
+            hsv_range = tuple(data['hsv_range'])
+            min_area = int(data.get('min_area', 100))
+            _stream_state["hsv_range"] = hsv_range
+            _stream_state["min_area"] = min_area
+            realtime_cv.initialize(nballs, hsv_range, min_area)
+            # Buffer mínimo depende de FPS de cámara: ~2 segundos
+            min_frames = int(camera_fps * 2)
+            return jsonify({"success": True,
+                            "message": f"CV real-time iniciado ({nballs}b)",
+                            "min_frames": min_frames,
+                            "camera_fps": camera_fps})
+        else:
+            return jsonify({"success": False, "error": f"Modo no soportado: {mode}"})
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/realtime/stop', methods=['POST'])
+def realtime_stop():
+    """Detiene sesión de tiempo real."""
+    _stream_state["active"] = False
+    _stream_state["mode"] = None
+    return jsonify({"success": True})
+
+
+@app.route('/realtime/frame', methods=['POST'])
+def realtime_frame():
+    """
+    Recibe un frame del navegador (base64), lo procesa y retorna resultado.
+    """
+    if not _stream_state["active"]:
+        return jsonify({"success": False, "error": "Sesión no activa"})
+
+    data = request.get_json()
+    img_b64 = data['frame']
+
+    try:
+        header, encoded = img_b64.split(',', 1)
+        img_bytes = base64.b64decode(encoded)
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    except Exception as e:
+        return jsonify({"success": False, "error": f"Error decodificando frame: {e}"})
+
+    if frame is None:
+        return jsonify({"success": False, "error": "Frame inválido"})
+
+    mode = _stream_state["mode"]
+    camera_fps = _stream_state.get("camera_fps", 30)
+
+    try:
+        if mode == 'deeplearning':
+            result = realtime_dl.process_frame(frame)
+            smoothed = realtime_dl.get_smoothed_prediction()
+
+            response = {
+                "success": True,
+                "buffer_size": result["buffer_size"],
+                "seq_len": SEQ_LEN,
+                "n_detections": len(result["detections"]),
+                "n_tracks": len(result["tracks"]),
+                "annotated_frame": frame_to_base64(result["annotated_frame"]),
+                "camera_fps": camera_fps,
+            }
+
+            if result["prediction"]:
+                response["prediction"] = {
+                    "trick": result["prediction"]["trick"],
+                    "confidence": result["prediction"]["confidence"],
+                }
+
+            if smoothed:
+                response["smoothed_prediction"] = {
+                    "trick": smoothed["trick"],
+                    "confidence": smoothed["confidence"],
+                    "n_windows": smoothed["n_windows"],
+                }
+
+            return jsonify(response)
+
+        elif mode == 'computervision':
+            result = realtime_cv.process_frame(frame)
+            min_frames = int(camera_fps * 2)
+
+            response = {
+                "success": True,
+                "buffer_size": result["buffer_size"],
+                "min_frames": min_frames,
+                "n_detections": len(result["detections"]),
+                "n_tracks": len(result["tracks"]),
+                "annotated_frame": frame_to_base64(result["annotated_frame"]),
+                "camera_fps": camera_fps,
+            }
+
+            if result["siteswap"] and result["siteswap"].get("canonical"):
+                response["siteswap"] = result["siteswap"]
+
+            return jsonify(response)
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)})
+
 if __name__ == '__main__':
     os.makedirs('uploads', exist_ok=True)
     os.makedirs('templates', exist_ok=True)
     # Usar un solo thread (evita problemas de sesión múltiple)
-    app.run(debug=True, host='0.0.0.0', port=5000, threaded=False)
+    app.run(debug=False, host='0.0.0.0', port=5000, threaded=False)
